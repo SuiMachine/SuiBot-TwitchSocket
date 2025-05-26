@@ -14,7 +14,7 @@ namespace SuiBot_TwitchSocket.Interfaces
 		void TwitchSocket_StreamWentOffline(ES_StreamOffline offlineData);
 		void TwitchSocket_AutoModMessageHold(ES_AutomodMessageHold messageHold);
 		void TwitchSocket_SuspiciousMessageReceived(ES_Suspicious_UserMessage suspiciousMessage);
-
+		void TwitchSocket_ChannelPointsRedeem(ES_ChannelPoints redeemInfo);
 	}
 
 	public interface IChannelInstance

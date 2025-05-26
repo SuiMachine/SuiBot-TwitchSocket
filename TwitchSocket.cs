@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SuiBot_Core.API.EventSub;
-using SuiBot_TwitchSocket;
 using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Diagnostics;
@@ -346,10 +345,7 @@ namespace SuiBot_Core
 			if (payload["event"] == null)
 				return;
 			ES_ChannelPoints obj = payload["event"].ToObject<ES_ChannelPoints>();
-			//var passedData = new API.ChannelPointRedeemRequest(obj.user_name, obj.user_id, obj.reward.id, obj.id, obj.status, obj.user_input);
-
-			//Debug.WriteLine($"Received payload with text: {obj.user_input}");
-			//OnChannelPointsRedeem?.Invoke(passedData);
+			BotInstance?.TwitchSocket_ChannelPointsRedeem(obj);
 		}
 
 		private void ProcessStreamOnline(JToken payload)

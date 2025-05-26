@@ -62,6 +62,7 @@
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_ChannelAdBreakBegin.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_ChannelSuspeciousUserMessage.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_ReadChannelMessage.cs" />
+    <Compile Include="API\EventSub\Subscription\SubscribeMSG_RedemptionAdd.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_StreamOffline.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_StreamOnline.cs" />
     <Compile Include="API\EventSub\Subscription\SubscriptionMessage.cs" />

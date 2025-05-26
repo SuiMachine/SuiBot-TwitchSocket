@@ -26,7 +26,7 @@ namespace SuiBot_Core.API
 		public Dictionary<string, Response_GetUserInfo> UserNameToInfo = new Dictionary<string, Response_GetUserInfo>();
 		public string BotLoginName { get; private set; }
 		public ulong BotUserId { get; private set; } //This should be string :(
-		public readonly string CLIENT_ID = "rmi9m0sheo4pp5882o8s24zu7h09md";
+		public string CLIENT_ID { get; private set; }
 
 #if LOCAL_API
 		//Local user - 92987419
@@ -90,10 +90,11 @@ namespace SuiBot_Core.API
 		}
 
 		//For testing
-		public HelixAPI(IBotInstance bot, string aouth)
+		public HelixAPI(string clientID, IBotInstance bot, string aouth)
 		{
 			this.m_BotInstance = bot;
 			this.OAUTH = aouth;
+			this.CLIENT_ID = clientID;
 #if LOCAL_API
 			this.BotLoginName = "fishershepard595";
 #endif
