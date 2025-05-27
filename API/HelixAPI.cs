@@ -25,7 +25,7 @@ namespace SuiBot_Core.API
 
 		public Dictionary<string, Response_GetUserInfo> UserNameToInfo = new Dictionary<string, Response_GetUserInfo>();
 		public string BotLoginName { get; private set; }
-		public ulong BotUserId { get; private set; } //This should be string :(
+		public string BotUserId { get; private set; } //This should be string :(
 		public string CLIENT_ID { get; private set; }
 
 #if LOCAL_API
@@ -86,7 +86,10 @@ namespace SuiBot_Core.API
 			if (string.IsNullOrEmpty(res))
 				return null;
 
-			return JsonConvert.DeserializeObject<Response_ValidateToken>(res);
+			var validation = JsonConvert.DeserializeObject<Response_ValidateToken>(res);
+			this.BotLoginName = validation.login;
+			this.BotUserId = validation.user_id;
+			return validation;
 		}
 
 		//For testing
@@ -448,6 +451,11 @@ namespace SuiBot_Core.API
 		public async Task CloseSubscription(Subscription_Response_Data subscription)
 		{
 			await HttpWebRequestHandlers.PerformDeleteAsync(BASE_URI, "eventsub/subscriptions", $"?id={subscription.id}", BuildDefaultHeaders());
+		}
+
+		public void UpdateRedemptionStatus(ES_ChannelPoints.ChannelPointRedeemRequest redeem, ES_ChannelPoints.RedemptionStates fullfilmentStatus)
+		{
+
 		}
 	}
 }

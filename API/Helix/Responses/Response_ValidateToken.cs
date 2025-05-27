@@ -5,7 +5,7 @@
 		public string client_id;
 		public string login;
 		public string[] scopes;
-		public ulong user_id;
+		public string user_id;
 		public ulong expires_in;
 	}
 }
