@@ -74,7 +74,6 @@
     <Compile Include="API\Helix\Responses\Response_StreamStatus.cs" />
     <Compile Include="API\Helix\Responses\Response_ValidateToken.cs" />
     <Compile Include="API\Helix\Responses\UniversalResponse_Transport.cs" />
-    <Compile Include="ConnectionConfig.cs" />
     <Compile Include="ErrorLogging.cs" />
     <Compile Include="Extensions\SuiStringExtansions.cs" />
     <Compile Include="HttpWebRequestHandlers.cs" />
