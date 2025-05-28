@@ -11,24 +11,29 @@ namespace SuiBot_Core.API.EventSub
 			CANCELED
 		}
 
-		public class ChannelPointRedeemRequest
+		public class ES_ChannelPointRedeemRequest
 		{
-			public string userName;
-			public string userId;
-			public string rewardId;
-			public string redemptionId;
-			public RedemptionStates state;
-			public string userInput;
-
-			public ChannelPointRedeemRequest(string userName, string userId, string rewardId, string redemptionId, RedemptionStates state, string userInput)
+			public class Reward
 			{
-				this.userName = userName;
-				this.userId = userId;
-				this.rewardId = rewardId;
-				this.redemptionId = redemptionId;
-				this.state = state;
-				this.userInput = userInput;
+				public string id;
+				public string title;
+				public string prompt;
+				public int cost;
 			}
+
+			public string id;
+			public string broadcaster_user_id;
+			public string broadcaster_user_login;
+			public string broadcaster_user_name;
+			public string user_id;
+			public string user_login;
+			public string user_name;
+			public string userInput;
+			public RedemptionStates state;
+			public DateTime redeemed_at;
+			public Reward reward;
+
+			public ES_ChannelPointRedeemRequest() { }
 		}
 
 		[Serializable]

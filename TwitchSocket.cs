@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WebSocketSharp;
+using static SuiBot_Core.API.EventSub.ES_ChannelPoints;
 
 namespace SuiBot_Core
 {
@@ -344,7 +345,7 @@ namespace SuiBot_Core
 		{
 			if (payload["event"] == null)
 				return;
-			ES_ChannelPoints obj = payload["event"].ToObject<ES_ChannelPoints>();
+			ES_ChannelPointRedeemRequest obj = payload["event"]?.ToObject<ES_ChannelPointRedeemRequest>();
 			BotInstance?.TwitchSocket_ChannelPointsRedeem(obj);
 		}
 
