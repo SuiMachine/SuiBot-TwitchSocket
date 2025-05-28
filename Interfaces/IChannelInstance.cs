@@ -1,10 +1,13 @@
 ﻿using SuiBot_Core.API.EventSub;
 using SuiBot_Core.API.Helix.Responses;
+using System;
 
 namespace SuiBot_TwitchSocket.Interfaces
 {
-	public interface IBotInstance
+	public interface IBotInstance: IDisposable
 	{
+		bool ShouldRun { get; set; }
+		bool IsDisposed { get; }
 		bool GetChannelInstanceUsingLogin(string login, out IChannelInstance channel);
 		void TwitchSocket_Connected();
 		void TwitchSocket_Disconnected();

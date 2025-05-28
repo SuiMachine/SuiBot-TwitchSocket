@@ -266,6 +266,35 @@ namespace SuiBot_Core.API
 				return null;
 		}
 
+		public async Task<Subscription_Response_Data> SubscribeTo_ChatMessageUsingID(string channelID, string sessionId)
+		{
+			var content = new SubscribeMSG_ReadChannelMessage(channelID, BotUserId.ToString(), sessionId);
+			var serialize = JsonConvert.SerializeObject(content, Formatting.Indented, new JsonSerializerSettings()
+			{
+				NullValueHandling = NullValueHandling.Ignore
+			});
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "eventsub/subscriptions", "", serialize, BuildDefaultHeaders());
+			if (!string.IsNullOrEmpty(result))
+			{
+				Response_SubscribeTo deserialize = JsonConvert.DeserializeObject<Response_SubscribeTo>(result);
+				if (deserialize != null)
+				{
+					deserialize.PerformCostCheck();
+					if (deserialize.data.Length > 0)
+					{
+						return deserialize.data.FirstOrDefault(x => x.condition.broadcaster_user_id == channelID);
+					}
+					else
+						return null;
+				}
+				else
+					return null;
+			}
+			else
+				return null;
+		}
+
 		//Too much code repetition - should at least be seperate
 		public async Task<bool> SubscribeToOnlineStatus(string channelID, string sessionID)
 		{
@@ -456,6 +485,13 @@ namespace SuiBot_Core.API
 		public void UpdateRedemptionStatus(ES_ChannelPoints.ChannelPointRedeemRequest redeem, ES_ChannelPoints.RedemptionStates fullfilmentStatus)
 		{
 
+		}
+
+		public static string GenerateAuthenticationURL(string client_id, string callbackAddress, string[] scopes)
+		{
+			var url = new Uri($"https://id.twitch.tv/oauth2/authorize?client_id={client_id}&redirect_uri={callbackAddress}&response_type=token&scope={string.Join(" ", scopes)}");
+
+			return url.AbsoluteUri;
 		}
 	}
 }
