@@ -1,6 +1,6 @@
 ﻿namespace SuiBot_Core.API.EventSub.Subscription
 {
-	public class SubscribeMSG_ChannelSuspiciousUserMessage
+	internal class SubscribeMSG_ChannelSuspiciousUserMessage
 	{
 		public string type = "channel.suspicious_user.message";
 		public int version = 1;

@@ -233,7 +233,7 @@ namespace SuiBot_Core.API
 			}
 		}
 
-		public async Task<Subscription_Response_Data> SubscribeTo_ChatMessage(string channel, string sessionId)
+		public async Task<Subscription_Response_Data> SubscribeToChatMessage(string channel, string sessionId)
 		{
 			Response_GetUserInfo channelInfo = await GetUserInfo(channel);
 			if (channelInfo == null)
@@ -266,7 +266,7 @@ namespace SuiBot_Core.API
 				return null;
 		}
 
-		public async Task<Subscription_Response_Data> SubscribeTo_ChatMessageUsingID(string channelID, string sessionId)
+		public async Task<Subscription_Response_Data> SubscribeToChatMessageUsingID(string channelID, string sessionId)
 		{
 			var content = new SubscribeMSG_ReadChannelMessage(channelID, BotUserId.ToString(), sessionId);
 			var serialize = JsonConvert.SerializeObject(content, Formatting.Indented, new JsonSerializerSettings()
@@ -421,6 +421,31 @@ namespace SuiBot_Core.API
 
 			return false;
 		}
+		public async Task<bool> SubscribeToChannelRedeem(string channelID, string sessionID)
+		{
+			var request = new SubscribeMSG_RedemptionAdd(channelID, sessionID);
+			var serialize = JsonConvert.SerializeObject(request, Formatting.Indented, new JsonSerializerSettings()
+			{
+				NullValueHandling = NullValueHandling.Ignore
+			});
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "eventsub/subscriptions", "", serialize, BuildDefaultHeaders());
+			if (result != null)
+			{
+				Response_SubscribeTo deserialize = JsonConvert.DeserializeObject<Response_SubscribeTo>(result);
+				if (deserialize != null)
+				{
+					deserialize.PerformCostCheck();
+					var channel = deserialize.data.FirstOrDefault(x => x.condition.broadcaster_user_id == channelID);
+					return channel != null;
+				}
+				else
+					return false;
+			}
+
+			return false;
+		}
+
 
 		public void SendMessage(IChannelInstance instance, string text)
 		{
