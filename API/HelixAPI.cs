@@ -542,6 +542,15 @@ namespace SuiBot_TwitchSocket.API
 				return false;
 		}
 
+		public async Task<bool> DeleteCustomReward(Response_ChannelPointInformation reward)
+		{
+			var result = await HttpWebRequestHandlers.PerformDeleteAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={reward.broadcaster_id}&id={reward.id}", BuildDefaultHeaders());
+			if (result != null)
+				return true;
+			else
+				return false;
+		}
+
 		public static string GenerateAuthenticationURL(string client_id, string callbackAddress, string[] scopes)
 		{
 			var url = new Uri($"https://id.twitch.tv/oauth2/authorize?client_id={client_id}&redirect_uri={callbackAddress}&response_type=token&scope={string.Join(" ", scopes)}");
@@ -551,14 +560,15 @@ namespace SuiBot_TwitchSocket.API
 
 		public async Task<Response_ChannelPointInformation> CreateOrUpdateReward(string rewardID, string rewardTitle, string rewardDescription, int rewardCost, int rewardCooldown, bool isEnabled, bool isUserInputRequired)
 		{
-			if (RewardsCache == null)
+			Response_ChannelPointInformation foundReward = null;
+			if (RewardsCache == null && rewardID != null)
 			{
 				if (!await CreateRewardsCache())
 					throw new Exception("Failed to download cache");
+				foundReward = RewardsCache.FirstOrDefault(x => x.id == rewardID);
 			}
 
-			Response_ChannelPointInformation foundReward = RewardsCache.FirstOrDefault(x => x.id == rewardID);
-			if(foundReward == null)
+			if (foundReward == null)
 			{
 				//Create reward
 				var newReward = new Request_CreateOrPatchChannelPointReward()
@@ -624,7 +634,7 @@ namespace SuiBot_TwitchSocket.API
 					if (newAward.Length == 0)
 						return null;
 
-					for(int i=0; i<RewardsCache.Count; i++)
+					for (int i = 0; i < RewardsCache.Count; i++)
 					{
 						if (RewardsCache[i] == foundReward)
 						{
