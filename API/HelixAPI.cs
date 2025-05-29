@@ -574,11 +574,21 @@ namespace SuiBot_TwitchSocket.API
 					is_enabled = isEnabled,
 					is_user_input_required = isUserInputRequired,
 				};
-				var serialize = JsonConvert.SerializeObject(foundReward, Formatting.Indented, new JsonSerializerSettings()
+				var serialize = JsonConvert.SerializeObject(newReward, Formatting.Indented, new JsonSerializerSettings()
 				{
 					NullValueHandling = NullValueHandling.Ignore
 				});
-				var patch = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={BotUserId}&id={foundReward.id}", serialize, BuildDefaultHeaders());
+				var post = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={BotUserId}", serialize, BuildDefaultHeaders());
+				if (post == null)
+					return null;
+
+				var deserialize = (JToken)JsonConvert.DeserializeObject(post);
+				if (deserialize["data"] == null)
+					return null;
+				var newAward = deserialize["data"].ToObject<Response_ChannelPointInformation[]>();
+				if (newAward.Length == 0)
+					return null;
+
 				await Task.Delay(2000);
 				return newReward;
 			}
@@ -587,17 +597,18 @@ namespace SuiBot_TwitchSocket.API
 				bool cooldownEnabled = rewardCooldown > 0;
 
 				//Update reward
-				if (foundReward.is_enabled != isEnabled || foundReward.title != rewardTitle || foundReward.prompt != rewardDescription || foundReward.cost != rewardCost || foundReward.global_cooldown_setting.is_enabled != cooldownEnabled || foundReward.global_cooldown_setting.global_cooldown_seconds == rewardCooldown)
+				if (foundReward.is_enabled != isEnabled || foundReward.title != rewardTitle || foundReward.prompt != rewardDescription || foundReward.cost != rewardCost || foundReward.global_cooldown_setting.is_enabled != cooldownEnabled || foundReward.global_cooldown_setting.global_cooldown_seconds != rewardCooldown)
 				{
-					foundReward.is_enabled = isEnabled;
-					foundReward.title = rewardTitle;
-					foundReward.prompt = rewardTitle;
-					foundReward.cost = rewardCost;
-					foundReward.global_cooldown_setting.is_enabled = cooldownEnabled;
-					foundReward.global_cooldown_setting.global_cooldown_seconds = rewardCooldown;
-					foundReward.is_user_input_required = isUserInputRequired;
+					var modifiedCopy = foundReward.CreateCopy();
 
-					var serialize = JsonConvert.SerializeObject(foundReward, Formatting.Indented, new JsonSerializerSettings()
+					modifiedCopy.is_enabled = isEnabled;
+					modifiedCopy.title = rewardTitle;
+					modifiedCopy.prompt = rewardDescription;
+					modifiedCopy.cost = rewardCost;
+					modifiedCopy.global_cooldown_setting.is_enabled = cooldownEnabled;
+					modifiedCopy.global_cooldown_setting.global_cooldown_seconds = rewardCooldown;
+
+					var serialize = JsonConvert.SerializeObject(Request_PatchChannelPointReward.CreateByComparingRewards(modifiedCopy, foundReward), Formatting.Indented, new JsonSerializerSettings()
 					{
 						NullValueHandling = NullValueHandling.Ignore
 					});

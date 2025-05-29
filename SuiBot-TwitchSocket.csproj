@@ -68,6 +68,7 @@
     <Compile Include="API\EventSub\Subscription\SubscriptionMessage.cs" />
     <Compile Include="API\HelixAPI.cs" />
     <Compile Include="API\Helix\API_Timeout.cs" />
+    <Compile Include="API\Helix\Request\Request_PatchChannelPointReward.cs" />
     <Compile Include="API\Helix\Request\Request_UpdateChannelPointsRedemptionStatus.cs" />
     <Compile Include="API\Helix\Request\Request_Ban.cs" />
     <Compile Include="API\Helix\Request\Request_SendMessage.cs" />
