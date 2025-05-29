@@ -24,6 +24,7 @@ namespace SuiBot_TwitchSocket.API
 			Failed
 		}
 
+		public Response_ChannelPointInformation[] RewardsCache { get; private set; }
 		public Dictionary<string, Response_GetUserInfo> UserNameToInfo = new Dictionary<string, Response_GetUserInfo>();
 		public string BotLoginName { get; private set; }
 		public string BotUserId { get; private set; } //This should be string :(
@@ -520,9 +521,25 @@ namespace SuiBot_TwitchSocket.API
 					NullValueHandling = NullValueHandling.Ignore
 				});
 
-				var pathRequest = HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "/channel_points/custom_rewards/redemptions", $"?id={redeem.id}&broadcaster_id={redeem.broadcaster_user_id}&reward_id={redeem.reward.id}", serialize, BuildDefaultHeaders()); ;
+				var pathRequest = HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "channel_points/custom_rewards/redemptions", $"?id={redeem.id}&broadcaster_id={redeem.broadcaster_user_id}&reward_id={redeem.reward.id}", serialize, BuildDefaultHeaders()); ;
 			});
 
+		}
+
+		public async Task<bool> CreateRewardsCache()
+		{
+			var rewardsRequest = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={BotUserId}&only_manageable_rewards=true", BuildDefaultHeaders());
+			if (string.IsNullOrEmpty(rewardsRequest))
+				throw new Exception("Failed to get rewards");
+
+			var deserialize = (JToken)JsonConvert.DeserializeObject(rewardsRequest);
+			if (deserialize["data"] != null)
+			{
+				RewardsCache = deserialize["data"].ToObject<Response_ChannelPointInformation[]>();
+				return true;
+			}
+			else
+				return false;
 		}
 
 		public static string GenerateAuthenticationURL(string client_id, string callbackAddress, string[] scopes)
@@ -530,6 +547,87 @@ namespace SuiBot_TwitchSocket.API
 			var url = new Uri($"https://id.twitch.tv/oauth2/authorize?client_id={client_id}&redirect_uri={callbackAddress}&response_type=token&scope={string.Join(" ", scopes)}");
 
 			return url.AbsoluteUri;
+		}
+
+		public async Task<Response_ChannelPointInformation> CreateOrUpdateReward(string rewardID, string rewardTitle, string rewardDescription, int rewardCost, int rewardCooldown, bool isEnabled, bool isUserInputRequired)
+		{
+			if (RewardsCache == null)
+			{
+				if (!await CreateRewardsCache())
+					throw new Exception("Failed to download cache");
+			}
+
+			Response_ChannelPointInformation foundReward = RewardsCache.FirstOrDefault(x => x.id == rewardID);
+			if(foundReward == null)
+			{
+				//Create reward
+				var newReward = new Response_ChannelPointInformation()
+				{
+					title = rewardTitle,
+					prompt = rewardDescription,
+					cost = rewardCost,
+					global_cooldown_setting = new Response_ChannelPointInformation.GlobalCooldownSetting()
+					{
+						is_enabled = rewardCooldown > 0,
+						global_cooldown_seconds = rewardCooldown
+					},
+					is_enabled = isEnabled,
+					is_user_input_required = isUserInputRequired,
+				};
+				var serialize = JsonConvert.SerializeObject(foundReward, Formatting.Indented, new JsonSerializerSettings()
+				{
+					NullValueHandling = NullValueHandling.Ignore
+				});
+				var patch = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={BotUserId}&id={foundReward.id}", serialize, BuildDefaultHeaders());
+				await Task.Delay(2000);
+				return newReward;
+			}
+			else
+			{
+				bool cooldownEnabled = rewardCooldown > 0;
+
+				//Update reward
+				if (foundReward.is_enabled != isEnabled || foundReward.title != rewardTitle || foundReward.prompt != rewardDescription || foundReward.cost != rewardCost || foundReward.global_cooldown_setting.is_enabled != cooldownEnabled || foundReward.global_cooldown_setting.global_cooldown_seconds == rewardCooldown)
+				{
+					foundReward.is_enabled = isEnabled;
+					foundReward.title = rewardTitle;
+					foundReward.prompt = rewardTitle;
+					foundReward.cost = rewardCost;
+					foundReward.global_cooldown_setting.is_enabled = cooldownEnabled;
+					foundReward.global_cooldown_setting.global_cooldown_seconds = rewardCooldown;
+					foundReward.is_user_input_required = isUserInputRequired;
+
+					var serialize = JsonConvert.SerializeObject(foundReward, Formatting.Indented, new JsonSerializerSettings()
+					{
+						NullValueHandling = NullValueHandling.Ignore
+					});
+
+					var patch = await HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={BotUserId}&id={foundReward.id}", serialize, BuildDefaultHeaders());
+					if (patch == null)
+						return null;
+					await Task.Delay(2000);
+
+					var deserialize = (JToken)JsonConvert.DeserializeObject(patch);
+					if (deserialize["data"] == null)
+						return null;
+
+					var newAward = deserialize["data"].ToObject<Response_ChannelPointInformation[]>();
+					if (newAward.Length == 0)
+						return null;
+
+					for(int i=0; i<RewardsCache.Length; i++)
+					{
+						if (RewardsCache[i] == foundReward)
+						{
+							RewardsCache[i] = newAward[0];
+							return newAward[0];
+						}
+					}
+					return null;
+				}
+				else
+					return foundReward;
+			}
 		}
 	}
 }
