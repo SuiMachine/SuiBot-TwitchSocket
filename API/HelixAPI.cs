@@ -24,7 +24,7 @@ namespace SuiBot_TwitchSocket.API
 			Failed
 		}
 
-		public Response_ChannelPointInformation[] RewardsCache { get; private set; }
+		public List<Response_ChannelPointInformation> RewardsCache { get; private set; }
 		public Dictionary<string, Response_GetUserInfo> UserNameToInfo = new Dictionary<string, Response_GetUserInfo>();
 		public string BotLoginName { get; private set; }
 		public string BotUserId { get; private set; } //This should be string :(
@@ -535,7 +535,7 @@ namespace SuiBot_TwitchSocket.API
 			var deserialize = (JToken)JsonConvert.DeserializeObject(rewardsRequest);
 			if (deserialize["data"] != null)
 			{
-				RewardsCache = deserialize["data"].ToObject<Response_ChannelPointInformation[]>();
+				RewardsCache = deserialize["data"].ToObject<List<Response_ChannelPointInformation>>();
 				return true;
 			}
 			else
@@ -561,16 +561,13 @@ namespace SuiBot_TwitchSocket.API
 			if(foundReward == null)
 			{
 				//Create reward
-				var newReward = new Response_ChannelPointInformation()
+				var newReward = new Request_CreateOrPatchChannelPointReward()
 				{
 					title = rewardTitle,
 					prompt = rewardDescription,
 					cost = rewardCost,
-					global_cooldown_setting = new Response_ChannelPointInformation.GlobalCooldownSetting()
-					{
-						is_enabled = rewardCooldown > 0,
-						global_cooldown_seconds = rewardCooldown
-					},
+					is_global_cooldown_enabled = isEnabled,
+					global_cooldown_seconds = rewardCooldown,
 					is_enabled = isEnabled,
 					is_user_input_required = isUserInputRequired,
 				};
@@ -590,7 +587,8 @@ namespace SuiBot_TwitchSocket.API
 					return null;
 
 				await Task.Delay(2000);
-				return newReward;
+				RewardsCache.Add(newAward[0]);
+				return newAward[0];
 			}
 			else
 			{
@@ -608,7 +606,7 @@ namespace SuiBot_TwitchSocket.API
 					modifiedCopy.global_cooldown_setting.is_enabled = cooldownEnabled;
 					modifiedCopy.global_cooldown_setting.global_cooldown_seconds = rewardCooldown;
 
-					var serialize = JsonConvert.SerializeObject(Request_PatchChannelPointReward.CreateByComparingRewards(modifiedCopy, foundReward), Formatting.Indented, new JsonSerializerSettings()
+					var serialize = JsonConvert.SerializeObject(Request_CreateOrPatchChannelPointReward.CreateByComparingRewards(modifiedCopy, foundReward), Formatting.Indented, new JsonSerializerSettings()
 					{
 						NullValueHandling = NullValueHandling.Ignore
 					});
@@ -626,7 +624,7 @@ namespace SuiBot_TwitchSocket.API
 					if (newAward.Length == 0)
 						return null;
 
-					for(int i=0; i<RewardsCache.Length; i++)
+					for(int i=0; i<RewardsCache.Count; i++)
 					{
 						if (RewardsCache[i] == foundReward)
 						{

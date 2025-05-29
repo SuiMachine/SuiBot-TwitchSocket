@@ -6,7 +6,7 @@ namespace SuiBot_TwitchSocket.API.Helix.Request
 	//THAT WOULD BE ACTUALLY NICE AND EASY
 	//NO, WE NEED A COMPLETELY DIFFERENT STRUCTURE
 	//THANKS TWITCH
-	public class Request_PatchChannelPointReward
+	public class Request_CreateOrPatchChannelPointReward
 	{
 		public string title;
 		public string prompt;
@@ -23,14 +23,14 @@ namespace SuiBot_TwitchSocket.API.Helix.Request
 		public bool? is_paused;
 		public bool? should_redemptions_skip_request_queue;
 
-		public static Request_PatchChannelPointReward CreateByComparingRewards(Response_ChannelPointInformation newReward, Response_ChannelPointInformation oldReward)
+		public static Request_CreateOrPatchChannelPointReward CreateByComparingRewards(Response_ChannelPointInformation newReward, Response_ChannelPointInformation oldReward)
 		{
 			bool max_per_stream_setting_Changed = newReward.max_per_stream_setting.is_enabled != oldReward.max_per_stream_setting.is_enabled || newReward.max_per_stream_setting.max_per_stream != oldReward.max_per_stream_setting.max_per_stream;
 			bool max_per_user_per_stream_setting_Changed = newReward.max_per_user_per_stream_setting.is_enabled != oldReward.max_per_user_per_stream_setting.is_enabled || newReward.max_per_user_per_stream_setting.max_per_user_per_stream != oldReward.max_per_user_per_stream_setting.max_per_user_per_stream;
 			bool globalCooldownChanged = newReward.global_cooldown_setting.is_enabled != oldReward.global_cooldown_setting.is_enabled || newReward.global_cooldown_setting.global_cooldown_seconds != oldReward.global_cooldown_setting.global_cooldown_seconds;
 
 
-			return new Request_PatchChannelPointReward()
+			return new Request_CreateOrPatchChannelPointReward()
 			{
 				title = newReward.title != oldReward.title ? newReward.title : null,
 				prompt = newReward.prompt != oldReward.prompt ? newReward.prompt : null,
