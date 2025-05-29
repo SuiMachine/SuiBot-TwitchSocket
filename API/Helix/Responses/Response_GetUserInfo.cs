@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace SuiBot_Core.API.Helix.Responses
+namespace SuiBot_TwitchSocket.API.Helix.Responses
 {
 	[Serializable]
 	[DebuggerDisplay(nameof(Response_GetUserInfo) + " {login} ({id})")]

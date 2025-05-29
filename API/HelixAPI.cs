@@ -1,18 +1,19 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SuiBot_Core.API.EventSub;
-using SuiBot_Core.API.EventSub.Subscription;
-using SuiBot_Core.API.EventSub.Subscription.Responses;
-using SuiBot_Core.API.Helix.Request;
-using SuiBot_Core.API.Helix.Responses;
+using SuiBot_TwitchSocket.API.EventSub;
+using SuiBot_TwitchSocket.API.EventSub.Subscription;
+using SuiBot_TwitchSocket.API.EventSub.Subscription.Responses;
+using SuiBot_TwitchSocket.API.Helix.Request;
+using SuiBot_TwitchSocket.API.Helix.Responses;
 using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
-using static SuiBot_Core.API.EventSub.Subscription.Responses.Response_SubscribeTo;
+using static SuiBot_TwitchSocket.API.EventSub.Subscription.Responses.Response_SubscribeTo;
 
-namespace SuiBot_Core.API
+namespace SuiBot_TwitchSocket.API
 {
 	public class HelixAPI
 	{
@@ -509,6 +510,18 @@ namespace SuiBot_Core.API
 
 		public void UpdateRedemptionStatus(ES_ChannelPoints.ES_ChannelPointRedeemRequest redeem, ES_ChannelPoints.RedemptionStates fullfilmentStatus)
 		{
+			Task.Run(async () =>
+			{
+				if (fullfilmentStatus == ES_ChannelPoints.RedemptionStates.UNFULFILLED)
+					return; //I have no idea why would anyone do this
+				var redeemStatus = Helix.Request.Request_UpdateChannelPointsRedemptionStatus.UpdateWith(fullfilmentStatus);
+				var serialize = JsonConvert.SerializeObject(redeemStatus, Formatting.Indented, new JsonSerializerSettings()
+				{
+					NullValueHandling = NullValueHandling.Ignore
+				});
+
+				var pathRequest = HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "/channel_points/custom_rewards/redemptions", $"?id={redeem.id}&broadcaster_id={redeem.broadcaster_user_id}&reward_id={redeem.reward.id}", serialize, BuildDefaultHeaders()); ;
+			});
 
 		}
 

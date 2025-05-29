@@ -3,7 +3,7 @@ using Newtonsoft.Json.Converters;
 using System;
 using System.Diagnostics;
 
-namespace SuiBot_Core.API.EventSub
+namespace SuiBot_TwitchSocket.API.EventSub
 {
 	[DebuggerDisplay(nameof(ES_SessionMessage) + " {status}")]
 	[Serializable]

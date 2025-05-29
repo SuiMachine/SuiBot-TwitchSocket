@@ -1,4 +1,4 @@
-﻿namespace SuiBot_Core.API.EventSub
+﻿namespace SuiBot_TwitchSocket.API.EventSub
 {
 	public enum EventSubClose_Code
 	{
@@ -19,11 +19,5 @@
 		session_keepalive,
 		notification,
 		session_reconnect
-	}
-
-	public enum EventSub_ChannelPoint_RedeemStatus
-	{
-		unfulfilled,
-		fullfield
 	}
 }

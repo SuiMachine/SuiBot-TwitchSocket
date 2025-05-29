@@ -1,7 +1,7 @@
-﻿using SuiBot_Core.API.EventSub;
-using SuiBot_Core.API.Helix.Responses;
+﻿using SuiBot_TwitchSocket.API.EventSub;
+using SuiBot_TwitchSocket.API.Helix.Responses;
 using System;
-using static SuiBot_Core.API.EventSub.ES_ChannelPoints;
+using static SuiBot_TwitchSocket.API.EventSub.ES_ChannelPoints;
 
 namespace SuiBot_TwitchSocket.Interfaces
 {

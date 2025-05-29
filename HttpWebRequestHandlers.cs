@@ -2,10 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Mime;
+using System.Runtime.Remoting.Messaging;
+using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace SuiBot_Core
+namespace SuiBot_TwitchSocket
 {
 	public static class HttpWebRequestHandlers
 	{
@@ -165,6 +169,47 @@ namespace SuiBot_Core
 				ErrorLoggingSocket.WriteLine($"Failed to perform post: {e}");
 				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl + scope + parameters}");
 				ErrorLoggingSocket.WriteLine($"Content was: {postData}");
+				return "";
+			}
+		}
+
+		public static async Task<string> PerformPatchAsync(string baseUrl, string scope, string parameters, string patchData, Dictionary<string, string> headers, string contentType = "application/json", int timeout = 5000)
+		{
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + scope + parameters);
+
+			try
+			{
+				foreach (var header in headers)
+				{
+					request.Headers[header.Key] = header.Value;
+				}
+
+				byte[] encodedPostData = Encoding.UTF8.GetBytes(patchData);
+
+				request.Timeout = timeout;
+				request.Method = "PATCH";
+				request.ContentType = contentType;
+				request.ContentLength = encodedPostData.Length;
+
+				var requestStream = request.GetRequestStreamAsync();
+				using (var rqStream = await requestStream)
+				{
+					await rqStream.WriteAsync(encodedPostData, 0, encodedPostData.Length);
+				}
+
+				var webResponse = await request.GetResponseAsync();
+				using (HttpWebResponse response = (HttpWebResponse)webResponse)
+				using (Stream stream = response.GetResponseStream())
+				using (StreamReader reader = new StreamReader(stream))
+				{
+					return await reader.ReadToEndAsync();
+				}
+			}
+			catch (Exception e)
+			{
+				ErrorLoggingSocket.WriteLine($"Failed to perform patch: {e}");
+				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl + scope + parameters}");
+				ErrorLoggingSocket.WriteLine($"Content was: {patchData}");
 				return "";
 			}
 		}

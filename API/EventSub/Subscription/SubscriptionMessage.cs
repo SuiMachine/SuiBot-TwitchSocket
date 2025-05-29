@@ -1,4 +1,4 @@
-﻿namespace SuiBot_Core.API.EventSub.Subscription
+﻿namespace SuiBot_TwitchSocket.API.EventSub.Subscription
 {
 	public class ES_Subscribe_Condition
 	{

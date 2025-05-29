@@ -3,7 +3,7 @@ using Newtonsoft.Json.Converters;
 using System;
 using System.Diagnostics;
 
-namespace SuiBot_Core.API.EventSub
+namespace SuiBot_TwitchSocket.API.EventSub
 {
 	[DebuggerDisplay("EventSub_Metadata - {message_type} ({message_timestamp}) - {message_id}")]
 	[Serializable]

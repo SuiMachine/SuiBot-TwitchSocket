@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace SuiBot_Core.API.EventSub.Subscription.Responses
+namespace SuiBot_TwitchSocket.API.EventSub.Subscription.Responses
 {
 	[DebuggerDisplay(nameof(Response_SubscribeTo) + " {data[0].@type} - {total_cost} / {max_total_cost}")]
 	public class Response_SubscribeTo

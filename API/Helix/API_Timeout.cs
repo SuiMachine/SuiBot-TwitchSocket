@@ -1,4 +1,4 @@
-﻿namespace SuiBot_Core.API.Helix
+﻿namespace SuiBot_TwitchSocket.API.Helix
 {
 	public struct API_Data
 	{

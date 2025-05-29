@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 
-namespace SuiBot_Core
+namespace SuiBot_TwitchSocket
 {
 	static class ErrorLoggingSocket
 	{

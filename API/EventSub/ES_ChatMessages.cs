@@ -2,9 +2,8 @@
 using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Diagnostics;
-using System.Linq;
 
-namespace SuiBot_Core.API.EventSub
+namespace SuiBot_TwitchSocket.API.EventSub
 {
 	[DebuggerDisplay(nameof(ES_ChatMessage) + " {chatter_user_name}: {message.text}")]
 	public class ES_ChatMessage

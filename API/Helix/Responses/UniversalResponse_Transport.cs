@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SuiBot_Core.API.Helix.Responses
+namespace SuiBot_TwitchSocket.API.Helix.Responses
 {
 	public class UniversalResponse_Transport
 	{

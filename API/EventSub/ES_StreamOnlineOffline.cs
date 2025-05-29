@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SuiBot_Core.API.EventSub
+namespace SuiBot_TwitchSocket.API.EventSub
 {
 	public class ES_StreamOnline
 	{

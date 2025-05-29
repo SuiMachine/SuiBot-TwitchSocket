@@ -1,4 +1,4 @@
-﻿namespace SuiBot_Core.API.EventSub.Subscription
+﻿namespace SuiBot_TwitchSocket.API.EventSub.Subscription
 {
 	internal class SubscribeMSG_RedemptionAdd
 	{

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace SuiBot_Core.API.EventSub
+namespace SuiBot_TwitchSocket.API.EventSub
 {
     [DebuggerDisplay(nameof(ES_AutomodMessageHold) + " {user_name}: {message}")]
 	public class ES_AutomodMessageHold

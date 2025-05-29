@@ -1,14 +1,14 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SuiBot_Core.API.EventSub;
+using SuiBot_TwitchSocket.API.EventSub;
 using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WebSocketSharp;
-using static SuiBot_Core.API.EventSub.ES_ChannelPoints;
+using static SuiBot_TwitchSocket.API.EventSub.ES_ChannelPoints;
 
-namespace SuiBot_Core
+namespace SuiBot_TwitchSocket
 {
 	public class TwitchSocket
 	{

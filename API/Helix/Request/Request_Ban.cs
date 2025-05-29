@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SuiBot_Core.API.Helix.Request
+namespace SuiBot_TwitchSocket.API.Helix.Request
 {
 	public class Request_Ban
 	{
