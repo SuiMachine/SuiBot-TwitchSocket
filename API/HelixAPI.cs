@@ -565,8 +565,8 @@ namespace SuiBot_TwitchSocket.API
 			{
 				if (!await CreateRewardsCache())
 					throw new Exception("Failed to download cache");
-				foundReward = RewardsCache.FirstOrDefault(x => x.id == rewardID);
 			}
+			foundReward = RewardsCache.FirstOrDefault(x => x.id == rewardID);
 
 			if (foundReward == null)
 			{

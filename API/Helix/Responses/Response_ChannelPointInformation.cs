@@ -62,9 +62,9 @@ namespace SuiBot_TwitchSocket.API.Helix.Responses
 				id = id,
 				image = new ImageInformation()
 				{
-					url_1x = this.image.url_1x,
-					url_2x = this.image.url_2x,
-					url_4x = this.image.url_4x,
+					url_1x = this.image?.url_1x,
+					url_2x = this.image?.url_2x,
+					url_4x = this.image?.url_4x,
 				},
 				background_color = background_color,
 				is_enabled = is_enabled,
@@ -91,9 +91,9 @@ namespace SuiBot_TwitchSocket.API.Helix.Responses
 				is_in_stock = is_in_stock,
 				default_image = new ImageInformation()
 				{
-					url_1x = default_image.url_1x,
-					url_2x = default_image.url_2x,
-					url_4x = default_image.url_4x,
+					url_1x = default_image?.url_1x,
+					url_2x = default_image?.url_2x,
+					url_4x = default_image?.url_4x,
 				},
 				should_redemptions_skip_request_queue = should_redemptions_skip_request_queue,
 				redemptions_redeemed_current_stream = redemptions_redeemed_current_stream,
