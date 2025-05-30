@@ -2,11 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Mime;
-using System.Runtime.Remoting.Messaging;
-using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SuiBot_TwitchSocket

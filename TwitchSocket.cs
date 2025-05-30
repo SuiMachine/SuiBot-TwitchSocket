@@ -41,7 +41,8 @@ namespace SuiBot_TwitchSocket
 
 		private void CreateSessionAndSocket(int delay)
 		{
-			BotInstance?.TwitchSocket_Disconnected();
+			if (m_Connected)
+				BotInstance?.TwitchSocket_Disconnected();
 			m_Connected = false;
 			m_Connecting = true;
 
@@ -345,6 +346,7 @@ namespace SuiBot_TwitchSocket
 		{
 			if (payload["event"] == null)
 				return;
+			//var content = payload.ToString();
 			ES_ChannelPointRedeemRequest obj = payload["event"]?.ToObject<ES_ChannelPointRedeemRequest>();
 			BotInstance?.TwitchSocket_ChannelPointsRedeem(obj);
 		}
