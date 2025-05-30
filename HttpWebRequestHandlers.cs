@@ -163,7 +163,7 @@ namespace SuiBot_TwitchSocket
 			catch (Exception e)
 			{
 				ErrorLoggingSocket.WriteLine($"Failed to perform post: {e}");
-				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl + scope + parameters}");
+				ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
 				ErrorLoggingSocket.WriteLine($"Content was: {postData}");
 				return "";
 			}
@@ -204,7 +204,7 @@ namespace SuiBot_TwitchSocket
 			catch (Exception e)
 			{
 				ErrorLoggingSocket.WriteLine($"Failed to perform patch: {e}");
-				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl + scope + parameters}");
+				ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
 				ErrorLoggingSocket.WriteLine($"Content was: {patchData}");
 				return "";
 			}

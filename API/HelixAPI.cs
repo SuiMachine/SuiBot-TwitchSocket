@@ -9,7 +9,6 @@ using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using static SuiBot_TwitchSocket.API.EventSub.Subscription.Responses.Response_SubscribeTo;
 
