@@ -363,7 +363,7 @@ namespace SuiBot_TwitchSocket
 			if (msg.message_type == "user_intro")
 				ErrorLoggingSocket.WriteLine($"Verify this potential first message:\n{dbg}");
 
-			if(BotInstance.GetChannelInstanceUsingLogin(msg.broadcaster_user_login, out IChannelInstance instance))
+			if (BotInstance.GetChannelInstanceUsingLogin(msg.broadcaster_user_login, out IChannelInstance instance))
 				instance = null; //Not needed, but makes VS shutup
 			msg.SetupRole(instance);
 			BotInstance.TwitchSocket_ChatMessage(msg);
