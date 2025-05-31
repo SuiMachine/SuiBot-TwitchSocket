@@ -26,7 +26,7 @@ namespace SuiBot_TwitchSocket.API
 		public List<Response_ChannelPointInformation> RewardsCache { get; private set; }
 		public Dictionary<string, Response_GetUserInfo> UserNameToInfo = new Dictionary<string, Response_GetUserInfo>();
 		public string BotLoginName { get; private set; }
-		public string BotUserId { get; private set; } //This should be string :(
+		public string BotUserId { get; private set; }
 		public string CLIENT_ID { get; private set; }
 
 #if LOCAL_API
@@ -51,6 +51,10 @@ namespace SuiBot_TwitchSocket.API
 			};
 		}
 
+		/// <summary>
+		/// Wrapper for token validation for more simple operations that returns Enum based on validation state
+		/// </summary>
+		/// <returns>ValidationResult result - can be NoResponse / Successful / Failed</returns>
 		public ValidationResult ValidateToken()
 		{
 #if LOCAL_API
@@ -81,6 +85,10 @@ namespace SuiBot_TwitchSocket.API
 			return ValidationResult.Successful;
 		}
 
+		/// <summary>
+		/// Validates a ouath token with Twitch
+		/// </summary>
+		/// <returns>Response_ValidateToken object containing information for validation or null</returns>
 		public Response_ValidateToken GetValidation()
 		{
 			var res = HttpWebRequestHandlers.PerformGetSync("https://id.twitch.tv/oauth2/", "validate", "", BuildDefaultHeaders());
@@ -141,6 +149,69 @@ namespace SuiBot_TwitchSocket.API
 			}
 		}
 
+		/// <summary>
+		/// Gets a streamers stream information - if the stream isn't live, this will be null. To get offline info use GetChannelInformation.
+		/// </summary>
+		/// <param name="channelID">Channel ID to get information for</param>
+		/// <returns>Response_StreamStatus object containing a response or null at failure</returns>
+		public async Task<Response_StreamStatus> GetStatus(string channelID)
+		{
+			var result = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "streams", $"?user_login={channelID}", BuildDefaultHeaders());
+			if (result != "")
+			{
+				var response = JObject.Parse(result);
+				if (response["data"] != null)
+				{
+					var data = response["data"].ToObject<Response_StreamStatus[]>();
+					if (data.Length > 0)
+						return data[0];
+					else
+						return null;
+				}
+				else
+					return null;
+			}
+			else
+			{
+				ErrorLoggingSocket.WriteLine($"Error checking status for {channelID}");
+				return null;
+
+			}
+		}
+
+		/// <summary>
+		/// Gets the channel information - this will include information like last stream category/game, title etc. but won't tell you whatever the stream is live or not - to check whatever streamer is live use GetStatus
+		/// </summary>
+		/// <param name="channelID">Channel ID to get information for</param>
+		/// <returns>Response_ChannelInformation object containing a response or null at failure</returns>
+		public async Task<Response_ChannelInformation> GetChannelInformation(string channelID)
+		{
+			var result = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "channels", $"?broadcaster_id={channelID}", BuildDefaultHeaders());
+			if (result != "")
+			{
+				var deserialize = JsonConvert.DeserializeObject<JToken>(result);
+				if (deserialize["data"] != null)
+				{
+					var content = deserialize["data"].ToObject<Response_ChannelInformation[]>();
+					if (content != null && content.Length > 0)
+						return content[0];
+					else
+						return null;
+				}
+				else
+					return null;
+			}
+			else
+			{
+				ErrorLoggingSocket.WriteLine($"Error checking status for {channelID}");
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Removes a given message (if possible)
+		/// </summary>
+		/// <param name="messageID">Message to delete</param>
 		public void RequestRemoveMessage(ES_ChatMessage messageID)
 		{
 			Task.Run(async () =>
@@ -156,6 +227,12 @@ namespace SuiBot_TwitchSocket.API
 			});
 		}
 
+		/// <summary>
+		/// Times out a user based on a message
+		/// </summary>
+		/// <param name="message">Message based on which to timeout</param>
+		/// <param name="length">For how long to timeout a user (this has to shorter than 2 weeks)</param>
+		/// <param name="reason">Optimal reason for a timeout - can be null</param>
 		public void RequestTimeout(ES_ChatMessage message, TimeSpan length, string reason)
 		{
 			Task.Run(async () =>
@@ -170,6 +247,12 @@ namespace SuiBot_TwitchSocket.API
 			});
 		}
 
+		/// <summary>
+		/// Times out a user based on a message
+		/// </summary>
+		/// <param name="message">Message based on which to timeout</param>
+		/// <param name="length">For how long to timeout a user (in seconds) - can not be larger than 1_209_600.</param>
+		/// <param name="reason">Optimal reason for a timeout - can be null</param>
 		public void RequestTimeout(ES_ChatMessage message, uint length, string reason)
 		{
 			Task.Run(async () =>
@@ -184,6 +267,11 @@ namespace SuiBot_TwitchSocket.API
 			});
 		}
 
+		/// <summary>
+		/// Bans a user based on a message
+		/// </summary>
+		/// <param name="message">Message based on which to ban</param>
+		/// <param name="reason">Optimal reason for a ban - can be null</param>
 		public void RequestBan(ES_ChatMessage message, string reason)
 		{
 			Task.Run(async () =>
@@ -198,20 +286,25 @@ namespace SuiBot_TwitchSocket.API
 			});
 		}
 
-		private async Task<Response_GetUserInfo> GetUserInfo(string userName)
+		/// <summary>
+		/// Gets user information based on Twitch login name
+		/// </summary>
+		/// <param name="twitchLogin">Twitch login name</param>
+		/// <returns>Response_GetUserInfo object or null</returns>
+		private async Task<Response_GetUserInfo> GetUserInfo(string twitchLogin)
 		{
-			if (UserNameToInfo.TryGetValue(userName, out Response_GetUserInfo userId))
+			if (UserNameToInfo.TryGetValue(twitchLogin, out Response_GetUserInfo userId))
 				return userId;
 			else
 			{
-				var result = await HttpWebRequestHandlers.PerformGetAsync("https://api.twitch.tv/helix/", $"users?login={userName}", "", BuildDefaultHeaders());
+				var result = await HttpWebRequestHandlers.PerformGetAsync("https://api.twitch.tv/helix/", "users", $"?login={twitchLogin}", BuildDefaultHeaders());
 				if (!string.IsNullOrEmpty(result))
 				{
 					var response = JObject.Parse(result);
 					if (response["data"] != null && response["data"].Children().Count() > 0)
 					{
 						var userInfo = response["data"].First.ToObject<Response_GetUserInfo>();
-						UserNameToInfo.Add(userName, userInfo);
+						UserNameToInfo.Add(twitchLogin, userInfo);
 						return userInfo;
 					}
 				}
@@ -234,9 +327,15 @@ namespace SuiBot_TwitchSocket.API
 			}
 		}
 
-		public async Task<Subscription_Response_Data> SubscribeToChatMessage(string channel, string sessionId)
+		/// <summary>
+		/// Subscribes to receiving chat message for a given channel
+		/// </summary>
+		/// <param name="twitchLoginName">Channel login name for which to start receiving messages</param>
+		/// <param name="sessionId">Websocket session ID</param>
+		/// <returns>Subscription_Response_Data object or null.</returns>
+		public async Task<Subscription_Response_Data> SubscribeToChatMessage(string twitchLoginName, string sessionId)
 		{
-			Response_GetUserInfo channelInfo = await GetUserInfo(channel);
+			Response_GetUserInfo channelInfo = await GetUserInfo(twitchLoginName);
 			if (channelInfo == null)
 				return null;
 
@@ -267,6 +366,12 @@ namespace SuiBot_TwitchSocket.API
 				return null;
 		}
 
+		/// <summary>
+		/// Subscribes to receiving chat message for a given channel using its ID (this is more optimal than SubscribeToChatMessage)
+		/// </summary>
+		/// <param name="channelID">Channel ID for which to start receiving messages</param>
+		/// <param name="sessionId">Websocket session ID</param>
+		/// <returns>Subscription_Response_Data object or null</returns>
 		public async Task<Subscription_Response_Data> SubscribeToChatMessageUsingID(string channelID, string sessionId)
 		{
 			var content = new SubscribeMSG_ReadChannelMessage(channelID, BotUserId.ToString(), sessionId);
@@ -296,7 +401,12 @@ namespace SuiBot_TwitchSocket.API
 				return null;
 		}
 
-		//Too much code repetition - should at least be seperate
+		/// <summary>
+		/// Subscribes to start receiving "went online" status
+		/// </summary>
+		/// <param name="channelID">Channel ID for which to start receiving the status updates</param>
+		/// <param name="sessionId">Websocket session ID</param>
+		/// <returns>True/False depending on success of operation</returns>
 		public async Task<bool> SubscribeToOnlineStatus(string channelID, string sessionID)
 		{
 			var request = new SubscribeMSG_StreamOnline(channelID, sessionID);
@@ -322,6 +432,12 @@ namespace SuiBot_TwitchSocket.API
 			return false;
 		}
 
+		/// <summary>
+		/// Subscribes to start receiving "went offline" status updates
+		/// </summary>
+		/// <param name="channelID">Channel ID for which to start receiving the status updates</param>
+		/// <param name="sessionId">Websocket session ID</param>
+		/// <returns>True/False depending on success of operation</returns>
 		public async Task<bool> SubscribeToOfflineStatus(string channelID, string sessionID)
 		{
 			var request = new SubscribeMSG_StreamOffline(channelID, sessionID);
@@ -372,6 +488,12 @@ namespace SuiBot_TwitchSocket.API
 			return false;
 		}
 
+		/// <summary>
+		/// Subscribes to start receiving "suspicious message was held" type messages for a channel - a bot needs to have a moderator status in the channel
+		/// </summary>
+		/// <param name="channelID">Channel ID for which to start receiving the status updates</param>
+		/// <param name="sessionId">Websocket session ID</param>
+		/// <returns>True/False depending on success of operation</returns>
 		public async Task<bool> SubscribeToChannelSuspiciousUserMessage(string channelID, string sessionID)
 		{
 			var request = new SubscribeMSG_ChannelSuspiciousUserMessage(channelID, BotUserId.ToString(), sessionID);
@@ -397,6 +519,7 @@ namespace SuiBot_TwitchSocket.API
 			return false;
 		}
 
+		//Broken
 		public async Task<bool> SubscribeToChannelAdBreak(string channelID, string sessionID)
 		{
 			//Idk... why this breaks with 403
@@ -422,6 +545,13 @@ namespace SuiBot_TwitchSocket.API
 
 			return false;
 		}
+
+		/// <summary>
+		/// Subscribes to receiving channel redeems in the channel
+		/// </summary>
+		/// <param name="channelID">Channel ID for which to start receiving the status updates</param>
+		/// <param name="sessionId">Websocket session ID</param>
+		/// <returns>True/False depending on success of operation</returns>
 		public async Task<bool> SubscribeToChannelRedeem(string channelID, string sessionID)
 		{
 			var request = new SubscribeMSG_RedemptionAdd(channelID, sessionID);
@@ -447,7 +577,11 @@ namespace SuiBot_TwitchSocket.API
 			return false;
 		}
 
-
+		/// <summary>
+		/// Sends a message in a chat for a specific channel
+		/// </summary>
+		/// <param name="instance">Instance of a channel (IChannelInstance)</param>
+		/// <param name="text">Text to send in chat</param>
 		public void SendMessage(IChannelInstance instance, string text)
 		{
 			Task.Run(async () =>
@@ -463,6 +597,11 @@ namespace SuiBot_TwitchSocket.API
 			});
 		}
 
+		/// <summary>
+		/// Sends a response to a message (ES_ChatMessage contains a channel to which to send a response) etc.
+		/// </summary>
+		/// <param name="messageToRespondTo">Message to which to respond</param>
+		/// <param name="message">Content of the response</param>
 		public void SendResponse(ES_ChatMessage messageToRespondTo, string message)
 		{
 			Task.Run(async () =>
@@ -478,14 +617,19 @@ namespace SuiBot_TwitchSocket.API
 			});
 		}
 
+		//Not implemented
 		public void RequestShoutout(ES_ChatMessage lastMessage, string username)
 		{
-			Task.Run(async () =>
+/*			Task.Run(async () =>
 			{
 
-			});
+			});*/
 		}
 
+		/// <summary>
+		/// Gets the list of current subscriptions - this should be done when connecting or disconnecting with a websocket and to 
+		/// </summary>
+		/// <returns>Response_SubscribeTo object containing information about your current and previous subscriptions including costs</returns>
 		public async Task<Response_SubscribeTo> GetCurrentSubscriptions()
 		{
 			var result = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "eventsub/subscriptions", "", BuildDefaultHeaders());
@@ -503,11 +647,21 @@ namespace SuiBot_TwitchSocket.API
 			return null;
 		}
 
+		/// <summary>
+		/// Closes a subscription (preferably used after GetCurrentSubscriptions).
+		/// </summary>
+		/// <param name="subscription">Subscription to close</param>
+		/// <returns>Awaitable task (no result)</returns>
 		public async Task CloseSubscription(Subscription_Response_Data subscription)
 		{
 			await HttpWebRequestHandlers.PerformDeleteAsync(BASE_URI, "eventsub/subscriptions", $"?id={subscription.id}", BuildDefaultHeaders());
 		}
 
+		/// <summary>
+		/// Updates a redemption status of an award. NOTE - the award has to be created by the same client id (bot) for it to be managed.
+		/// </summary>
+		/// <param name="redeem">Channel point redemption to set the redeem status of</param>
+		/// <param name="fullfilmentStatus">Status to set (has to be either FULFILLED / CANCELLED)</param>
 		public void UpdateRedemptionStatus(ES_ChannelPoints.ES_ChannelPointRedeemRequest redeem, ES_ChannelPoints.RedemptionStates fullfilmentStatus)
 		{
 			Task.Run(async () =>
@@ -522,14 +676,20 @@ namespace SuiBot_TwitchSocket.API
 
 				var pathRequest = await HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "channel_points/custom_rewards/redemptions", $"?id={redeem.id}&broadcaster_id={redeem.broadcaster_user_id}&reward_id={redeem.reward.id}", serialize, BuildDefaultHeaders()); ;
 			});
-
 		}
 
+		/// <summary>
+		/// Creates a local rewards cache (list) that can be managed by the bot - these are stored in HelixAPI object instance - RewardsCache
+		/// </summary>
+		/// <returns>True/False depending on success of the operation</returns>
 		public async Task<bool> CreateRewardsCache()
 		{
 			var rewardsRequest = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={BotUserId}&only_manageable_rewards=true", BuildDefaultHeaders());
 			if (string.IsNullOrEmpty(rewardsRequest))
-				throw new Exception("Failed to get rewards");
+			{
+				ErrorLoggingSocket.WriteLine("Failed to get rewards");
+				return false;
+			}
 
 			var deserialize = (JToken)JsonConvert.DeserializeObject(rewardsRequest);
 			if (deserialize["data"] != null)
@@ -541,6 +701,11 @@ namespace SuiBot_TwitchSocket.API
 				return false;
 		}
 
+		/// <summary>
+		/// Deletes the channel reward from the channel
+		/// </summary>
+		/// <param name="reward">Reward to delete</param>
+		/// <returns>True/False depending on success of the operation</returns>
 		public async Task<bool> DeleteCustomReward(Response_ChannelPointInformation reward)
 		{
 			var result = await HttpWebRequestHandlers.PerformDeleteAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={reward.broadcaster_id}&id={reward.id}", BuildDefaultHeaders());
@@ -550,6 +715,13 @@ namespace SuiBot_TwitchSocket.API
 				return false;
 		}
 
+		/// <summary>
+		/// Creates an authentication URL by combining client id, callback address and list of required scopes
+		/// </summary>
+		/// <param name="client_id">Client ID for which to create URL</param>
+		/// <param name="callbackAddress">Callback address</param>
+		/// <param name="scopes">Scopes</param>
+		/// <returns>URL that can be opened to receive OAUTH from Twitch</returns>
 		public static string GenerateAuthenticationURL(string client_id, string callbackAddress, string[] scopes)
 		{
 			var url = new Uri($"https://id.twitch.tv/oauth2/authorize?client_id={client_id}&redirect_uri={callbackAddress}&response_type=token&scope={string.Join(" ", scopes)}");
@@ -557,6 +729,18 @@ namespace SuiBot_TwitchSocket.API
 			return url.AbsoluteUri;
 		}
 
+		/// <summary>
+		/// Creates or updates the reward
+		/// </summary>
+		/// <param name="rewardID">Reward of an ID to udpate</param>
+		/// <param name="rewardTitle">Desired title</param>
+		/// <param name="rewardDescription">Desired description / prompt</param>
+		/// <param name="rewardCost">Desired cost</param>
+		/// <param name="rewardCooldown">Desired cooldown</param>
+		/// <param name="isEnabled">Whatever it should be enabled</param>
+		/// <param name="isUserInputRequired">Whatever user input is required</param>
+		/// <returns>Response_ChannelPointInformation object containing a created or updated reward</returns>
+		/// <exception cref="Exception">Exception if rewards cache could not be created</exception>
 		public async Task<Response_ChannelPointInformation> CreateOrUpdateReward(string rewardID, string rewardTitle, string rewardDescription, int rewardCost, int rewardCooldown, bool isEnabled, bool isUserInputRequired)
 		{
 			Response_ChannelPointInformation foundReward = null;

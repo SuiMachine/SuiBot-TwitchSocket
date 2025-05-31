@@ -72,6 +72,7 @@
     <Compile Include="API\Helix\Request\Request_UpdateChannelPointsRedemptionStatus.cs" />
     <Compile Include="API\Helix\Request\Request_Ban.cs" />
     <Compile Include="API\Helix\Request\Request_SendMessage.cs" />
+    <Compile Include="API\Helix\Responses\Response_ChannelInformation.cs" />
     <Compile Include="API\Helix\Responses\Response_ChannelPointInformation.cs" />
     <Compile Include="API\Helix\Responses\Response_GetUserInfo.cs" />
     <Compile Include="API\Helix\Responses\Response_StreamStatus.cs" />

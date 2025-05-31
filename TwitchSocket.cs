@@ -19,6 +19,7 @@ namespace SuiBot_TwitchSocket
 #endif
 
 		private string WEBSOCKET_CONNECT_URI;
+		private int Reconnect_Failures = 0;
 
 		private IBotInstance BotInstance;
 
@@ -65,6 +66,13 @@ namespace SuiBot_TwitchSocket
 
 			if (delay <= 0)
 				delay = 1;
+
+			if (Reconnect_Failures > 0)
+			{
+				ErrorLoggingSocket.WriteLine($"Reconnect number {0}");
+			}
+
+			Reconnect_Failures++;
 
 			DelayConnectionTimer = new System.Timers.Timer
 			{
@@ -151,6 +159,13 @@ namespace SuiBot_TwitchSocket
 			socketToClose.OnClose -= Socket_OnClose;
 			socketToClose.OnError -= Socket_OnError;
 
+			if (Reconnect_Failures > 100)
+			{
+				AutoReconnect = false;
+				ErrorLoggingSocket.WriteLine("Reached limit of reconnect attempts");
+				BotInstance.TwitchSocket_ClosedViaSocket();
+			}
+
 			if (AutoReconnect)
 			{
 				int delay = 0;
@@ -161,7 +176,7 @@ namespace SuiBot_TwitchSocket
 						break;
 					case (ushort)CloseStatusCode.Away:
 					case (ushort)CloseStatusCode.UnsupportedData:
-						delay = 1_000;
+						delay = 60_000;
 						break;
 					case 4000: //Internal server error
 					case 4005: //Network timeout
@@ -173,14 +188,20 @@ namespace SuiBot_TwitchSocket
 					case (ushort)CloseStatusCode.ServerError:
 					case (ushort)CloseStatusCode.TlsHandshakeFailure:
 						delay = 60_000;
+						WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
 						break;
 					case (ushort)CloseStatusCode.InvalidData:
 					case (ushort)CloseStatusCode.PolicyViolation:
 					case (ushort)CloseStatusCode.MandatoryExtension:
+						AutoReconnect = false;
+						BotInstance?.TwitchSocket_ClosedViaSocket();
+						return;
 					case 4002:
 						ErrorLoggingSocket.WriteLine("Failed ping-pong!");
-						AutoReconnect = false;
-						return;
+						WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
+						delay = 60_000;
+						AutoReconnect = true;
+						break;
 					case 4003:
 						ErrorLoggingSocket.WriteLine("Connection unused - no subscriptions!");
 						AutoReconnect = false;
@@ -195,9 +216,10 @@ namespace SuiBot_TwitchSocket
 						BotInstance?.TwitchSocket_ClosedViaSocket();
 						return;
 					case 4001:
-						ErrorLoggingSocket.WriteLine("Data send via websocket!");
-						delay = 10_000; //Send something via webscocket?!
-						break;
+						AutoReconnect = false;
+						ErrorLoggingSocket.WriteLine("Data was send via websocket! THIS IS SO WRONG");
+						BotInstance?.TwitchSocket_ClosedViaSocket();
+						return;
 					case (ushort)CloseStatusCode.NoStatus:
 					default:
 						delay = 10_000;
@@ -436,6 +458,7 @@ namespace SuiBot_TwitchSocket
 				SessionID = content.id;
 				AutoReconnect = true;
 				BotInstance?.TwitchSocket_Connected();
+				Reconnect_Failures = 0;
 			}
 		}
 
