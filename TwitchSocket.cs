@@ -13,10 +13,12 @@ namespace SuiBot_TwitchSocket
 	public class TwitchSocket
 	{
 #if LOCAL_API
-		private string WEBSOCKET_URI = "ws://127.0.0.1:8080/ws";
+		private const string WEBSOCKET_BASE_URI = "ws://127.0.0.1:8080/ws";
 #else
-		private string WEBSOCKET_URI = "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30";
+		private const string WEBSOCKET_BASE_URI = "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30";
 #endif
+
+		private string WEBSOCKET_CONNECT_URI;
 
 		private IBotInstance BotInstance;
 
@@ -46,7 +48,10 @@ namespace SuiBot_TwitchSocket
 			m_Connected = false;
 			m_Connecting = true;
 
-			Socket = new WebSocket(WEBSOCKET_URI);
+			if (string.IsNullOrEmpty(WEBSOCKET_CONNECT_URI))
+				WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
+
+			Socket = new WebSocket(WEBSOCKET_CONNECT_URI);
 #if !LOCAL_API
 			Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 #endif
@@ -88,7 +93,7 @@ namespace SuiBot_TwitchSocket
 			newSocket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 
 			this.AutoReconnect = true;
-			this.WEBSOCKET_URI = reconnect_url;
+			this.WEBSOCKET_CONNECT_URI = reconnect_url;
 			newSocket.OnClose += Socket_OnClose;
 			newSocket.OnError += Socket_OnError;
 			newSocket.OnMessage += Socket_OnMessage;
@@ -424,6 +429,7 @@ namespace SuiBot_TwitchSocket
 				Socket.Close();
 				Socket = socket;
 				AutoReconnect = true;
+				WEBSOCKET_CONNECT_URI = null;
 			}
 			else
 			{
