@@ -341,6 +341,9 @@ namespace SuiBot_TwitchSocket
 				case "channel.suspicious_user.message":
 					ProcessSuspiciousUserMessage(message.payload);
 					return;
+				case "channel.goal.end":
+					ProcessChannelGoalEnd(message.payload);
+					return;
 				default:
 					Console.WriteLine($"Unhandled message type: {message.metadata.subscription_type}");
 					return;
@@ -378,6 +381,16 @@ namespace SuiBot_TwitchSocket
 			BotInstance?.TwitchSocket_ChannelPointsRedeem(obj);
 		}
 
+		private void ProcessChannelGoalEnd(JToken payload)
+		{
+			if (payload["event"] == null)
+				return;
+
+			ES_ChannelGoal obj = payload["event"]?.ToObject<ES_ChannelGoal>();
+			if (obj != null)
+				BotInstance?.TwitchSocket_OnChannelGoalEnd(obj);
+		}
+
 		private void ProcessStreamOnline(JToken payload)
 		{
 			var eventText = payload["event"];
@@ -408,9 +421,6 @@ namespace SuiBot_TwitchSocket
 
 		private void ProcessAutomodMessageHold(JToken payload)
 		{
-			//We actually don't do anything with them for now
-			//cause technically you are supposed to have them handled by a human
-			//and not a bot... but maybe in the future...
 			var eventText = payload["event"];
 			if (eventText == null)
 				return;

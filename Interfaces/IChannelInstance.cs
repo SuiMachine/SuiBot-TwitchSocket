@@ -19,6 +19,7 @@ namespace SuiBot_TwitchSocket.Interfaces
 		void TwitchSocket_AutoModMessageHold(ES_AutomodMessageHold messageHold);
 		void TwitchSocket_SuspiciousMessageReceived(ES_Suspicious_UserMessage suspiciousMessage);
 		void TwitchSocket_ChannelPointsRedeem(ES_ChannelPointRedeemRequest redeemInfo);
+		void TwitchSocket_OnChannelGoalEnd(ES_ChannelGoal channelGoalEnded);
 	}
 
 	public interface IChannelInstance

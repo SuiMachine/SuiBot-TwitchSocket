@@ -578,6 +578,34 @@ namespace SuiBot_TwitchSocket.API
 		}
 
 		/// <summary>
+		/// Subscribes to receiving information about goal end
+		/// </summary>
+		/// <param name="channelID">Channel for which to receive messages over websocket</param>
+		/// <param name="sessionId">Websocket session ID</param>
+		/// <returns>True/False depending on success of operation</returns>
+		public async Task<bool> SubscribeToGoalEnd(string channelID, string sessionID)
+		{
+			var request = new SubscribeMSG_ChannelGoalEnd(channelID, sessionID);
+			var serialize = DefaultSerialize(request);
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "eventsub/subscriptions", "", serialize, BuildDefaultHeaders());
+			if (result != null)
+			{
+				Response_SubscribeTo deserialize = JsonConvert.DeserializeObject<Response_SubscribeTo>(result);
+				if (deserialize != null)
+				{
+					deserialize.PerformCostCheck();
+					var channel = deserialize.data.FirstOrDefault(x => x.condition.broadcaster_user_id == channelID);
+					return channel != null;
+				}
+				else
+					return false;
+			}
+
+			return false;
+		}
+
+		/// <summary>
 		/// Sends a message in a chat for a specific channel
 		/// </summary>
 		/// <param name="instance">Instance of a channel (IChannelInstance)</param>
@@ -587,13 +615,9 @@ namespace SuiBot_TwitchSocket.API
 			Task.Run(async () =>
 			{
 				var content = Request_SendChatMessage.CreateMessage(instance.ChannelID, BotUserId.ToString(), text);
-				var serialize = JsonConvert.SerializeObject(content, Formatting.Indented, new JsonSerializerSettings()
-				{
-					NullValueHandling = NullValueHandling.Ignore
-				});
+				var serialize = DefaultSerialize(content);
 
 				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());
-
 			});
 		}
 
@@ -607,10 +631,7 @@ namespace SuiBot_TwitchSocket.API
 			Task.Run(async () =>
 			{
 				var content = Request_SendChatMessage.CreateResponse(messageToRespondTo.broadcaster_user_id.ToString(), BotUserId.ToString(), messageToRespondTo.message_id, message);
-				var serialize = JsonConvert.SerializeObject(content, Formatting.Indented, new JsonSerializerSettings()
-				{
-					NullValueHandling = NullValueHandling.Ignore
-				});
+				var serialize = DefaultSerialize(content);
 
 				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());
 
@@ -830,6 +851,14 @@ namespace SuiBot_TwitchSocket.API
 				else
 					return foundReward;
 			}
+		}
+
+		private string DefaultSerialize(object obj)
+		{
+			return JsonConvert.SerializeObject(obj, Formatting.Indented, new JsonSerializerSettings()
+			{
+				NullValueHandling = NullValueHandling.Ignore
+			});
 		}
 	}
 }
