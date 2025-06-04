@@ -610,15 +610,12 @@ namespace SuiBot_TwitchSocket.API
 		/// </summary>
 		/// <param name="instance">Instance of a channel (IChannelInstance)</param>
 		/// <param name="text">Text to send in chat</param>
-		public void SendMessage(IChannelInstance instance, string text)
+		public async Task SendMessageAsync(IChannelInstance instance, string text)
 		{
-			Task.Run(async () =>
-			{
-				var content = Request_SendChatMessage.CreateMessage(instance.ChannelID, BotUserId.ToString(), text);
-				var serialize = DefaultSerialize(content);
+			var content = Request_SendChatMessage.CreateMessage(instance.ChannelID, BotUserId.ToString(), text);
+			var serialize = DefaultSerialize(content);
 
-				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());
-			});
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());
 		}
 
 		/// <summary>
@@ -626,16 +623,12 @@ namespace SuiBot_TwitchSocket.API
 		/// </summary>
 		/// <param name="messageToRespondTo">Message to which to respond</param>
 		/// <param name="message">Content of the response</param>
-		public void SendResponse(ES_ChatMessage messageToRespondTo, string message)
+		public async Task SendResponseAsync(ES_ChatMessage messageToRespondTo, string message)
 		{
-			Task.Run(async () =>
-			{
-				var content = Request_SendChatMessage.CreateResponse(messageToRespondTo.broadcaster_user_id.ToString(), BotUserId.ToString(), messageToRespondTo.message_id, message);
-				var serialize = DefaultSerialize(content);
+			var content = Request_SendChatMessage.CreateResponse(messageToRespondTo.broadcaster_user_id.ToString(), BotUserId.ToString(), messageToRespondTo.message_id, message);
+			var serialize = DefaultSerialize(content);
 
-				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());
-
-			});
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());
 		}
 
 		//Not implemented
