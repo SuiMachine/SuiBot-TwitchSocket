@@ -8,14 +8,14 @@ namespace SuiBot_TwitchSocket.API.Helix.Request
 
 		public class Request_Ban_Data
 		{
-			public ulong user_id;
+			public string user_id;
 			public int? duration;
 			public string reason;
 		}		
 
 		private Request_Ban() { }
 
-		public static Request_Ban CreateBan(ulong user_id, string reason = null)
+		public static Request_Ban CreateBan(string user_id, string reason = null)
 		{
 			return new Request_Ban()
 			{
@@ -28,7 +28,7 @@ namespace SuiBot_TwitchSocket.API.Helix.Request
 			};
 		}
 
-		public static Request_Ban CreateTimeout(ulong user_id, int duration_in_seconds, string reason)
+		public static Request_Ban CreateTimeout(string user_id, int duration_in_seconds, string reason)
 		{
 			if (duration_in_seconds > 1_209_600)
 				throw new Exception("Timeout can not be longer than 2 weeks!");
@@ -44,7 +44,7 @@ namespace SuiBot_TwitchSocket.API.Helix.Request
 			};
 		}
 
-		public static Request_Ban CreateTimeout(ulong user_id, TimeSpan duration, string reason)
+		public static Request_Ban CreateTimeout(string user_id, TimeSpan duration, string reason)
 		{
 			if (duration > TimeSpan.FromDays(14))
 				throw new Exception("Timeout can not be longer than 2 weeks!");

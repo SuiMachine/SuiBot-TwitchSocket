@@ -267,6 +267,20 @@ namespace SuiBot_TwitchSocket.API
 			});
 		}
 
+		public void RequestTimeout(string broadcaster_id, string chatter_user_id, uint length, string reason)
+		{
+			Task.Run(async () =>
+			{
+				var serialize = JsonConvert.SerializeObject(Request_Ban.CreateTimeout(chatter_user_id, (int)length, reason), Formatting.Indented, new JsonSerializerSettings()
+				{
+					NullValueHandling = NullValueHandling.Ignore
+				});
+
+				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "moderation/bans", $"?broadcaster_id={broadcaster_id}&moderator_id={BotUserId}", serialize, BuildDefaultHeaders());
+
+			});
+		}
+
 		/// <summary>
 		/// Bans a user based on a message
 		/// </summary>
@@ -283,6 +297,24 @@ namespace SuiBot_TwitchSocket.API
 
 				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "moderation/bans", $"?broadcaster_id={message.broadcaster_user_id}&moderator_id={BotUserId}", serialize, BuildDefaultHeaders());
 
+			});
+		}
+
+		/// <summary>
+		/// Bans a user based on a message
+		/// </summary>
+		/// <param name="message">Message based on which to ban</param>
+		/// <param name="reason">Optimal reason for a ban - can be null</param>
+		public void RequestBan(string broadcaster_id, string chatter_user_id, string reason)
+		{
+			Task.Run(async () =>
+			{
+				var serialize = JsonConvert.SerializeObject(Request_Ban.CreateBan(chatter_user_id, reason), Formatting.Indented, new JsonSerializerSettings()
+				{
+					NullValueHandling = NullValueHandling.Ignore
+				});
+
+				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "moderation/bans", $"?broadcaster_id={broadcaster_id}&moderator_id={BotUserId}", serialize, BuildDefaultHeaders());
 			});
 		}
 
@@ -626,6 +658,14 @@ namespace SuiBot_TwitchSocket.API
 		public async Task SendResponseAsync(ES_ChatMessage messageToRespondTo, string message)
 		{
 			var content = Request_SendChatMessage.CreateResponse(messageToRespondTo.broadcaster_user_id.ToString(), BotUserId.ToString(), messageToRespondTo.message_id, message);
+			var serialize = DefaultSerialize(content);
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());
+		}
+
+		public async Task SendResponseAsync(string broadcaster_id, string message_id, string message)
+		{
+			var content = Request_SendChatMessage.CreateResponse(broadcaster_id, BotUserId.ToString(), message_id, message);
 			var serialize = DefaultSerialize(content);
 
 			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/messages", "", serialize, BuildDefaultHeaders());

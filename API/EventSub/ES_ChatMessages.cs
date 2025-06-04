@@ -79,10 +79,10 @@ namespace SuiBot_TwitchSocket.API.EventSub
 			public string thread_user_login;
 		}
 
-		public ulong broadcaster_user_id; //This should be string
+		public string broadcaster_user_id; //This should be string
 		public string broadcaster_user_login;
 		public string broadcaster_user_name;
-		public ulong chatter_user_id; //This should be string
+		public string chatter_user_id;
 		public string chatter_user_login;
 		public string chatter_user_name;
 		public string message_id;

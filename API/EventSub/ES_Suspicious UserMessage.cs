@@ -12,10 +12,10 @@ namespace SuiBot_TwitchSocket.API.EventSub
 			public string text;
 		}
 
-		public ulong broadcaster_user_id;
+		public string broadcaster_user_id;
 		public string broadcaster_user_name;
 		public string broadcaster_user_login;
-		public ulong user_id;
+		public string user_id;
 		public string user_name;
 		public string user_login;
 		public string low_trust_status;
