@@ -551,10 +551,14 @@ namespace SuiBot_TwitchSocket.API
 			return false;
 		}
 
-		//Broken
+		/// <summary>
+		/// This can only be subscribed to with channel owner account!
+		/// </summary>
+		/// <param name="channelID">ID of a channel</param>
+		/// <param name="sessionID">ID of Websocket session</param>
+		/// <returns>True/False depending on success of an operation</returns>
 		public async Task<bool> SubscribeToChannelAdBreak(string channelID, string sessionID)
 		{
-			//Idk... why this breaks with 403
 			var request = new SubscribeMSG_ChannelAdBreakBegin(channelID, BotUserId.ToString(), sessionID);
 			var serialize = JsonConvert.SerializeObject(request, Formatting.Indented, new JsonSerializerSettings()
 			{

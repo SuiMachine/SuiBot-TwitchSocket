@@ -41,6 +41,7 @@ namespace SuiBot_TwitchSocket
 		public WebSocket Socket { get; private set; }
 		private System.Timers.Timer DelayConnectionTimer;
 		private System.Timers.Timer KeepAliveCheck;
+		private System.Timers.Timer m_Temp_AdBreakEnd;
 
 		private void CreateSessionAndSocket(int delay)
 		{
@@ -344,17 +345,42 @@ namespace SuiBot_TwitchSocket
 				case "channel.goal.end":
 					ProcessChannelGoalEnd(message.payload);
 					return;
+				case "channel.ad_break.begin":
+					ProcessAdBreakBegin(message.payload);
+					return;
 				default:
 					Console.WriteLine($"Unhandled message type: {message.metadata.subscription_type}");
 					return;
 			}
 		}
 
+		private void ProcessAdBreakBegin(JToken payload)
+		{
+			if (payload["event"] == null)
+				return;
+
+			var obj = payload["event"].ToObject<ES_AdBreakBeginNotification>();
+			BotInstance.TwitchSocket_AdBreakBegin(obj);
+			if (obj == null)
+				return;
+
+			if (m_Temp_AdBreakEnd != null)
+				m_Temp_AdBreakEnd.Dispose();
+			m_Temp_AdBreakEnd = new System.Timers.Timer(obj.duration_seconds * 1000) { AutoReset = false };
+
+			m_Temp_AdBreakEnd.Elapsed += ((object sender, System.Timers.ElapsedEventArgs e) =>
+			{
+				BotInstance?.TwitchSocket_AdBreakFinished(obj);
+				m_Temp_AdBreakEnd.Dispose();
+				m_Temp_AdBreakEnd = null;
+			});
+			m_Temp_AdBreakEnd.Start();
+		}
+
 		private void ProcessChatMessage(JToken payload)
 		{
 			var eventText = payload["event"];
 
-			var dbg = eventText.ToString();
 			var msg = eventText.ToObject<ES_ChatMessage>();
 
 			//"text"
@@ -364,7 +390,10 @@ namespace SuiBot_TwitchSocket
 			//"power_ups_gigantified_emote"
 			//"user_intro"
 			if (msg.message_type == "user_intro")
+			{
+				var dbg = eventText.ToString();
 				ErrorLoggingSocket.WriteLine($"Verify this potential first message:\n{dbg}");
+			}
 
 			if (BotInstance.GetChannelInstanceUsingLogin(msg.broadcaster_user_login, out IChannelInstance instance))
 				instance = null; //Not needed, but makes VS shutup

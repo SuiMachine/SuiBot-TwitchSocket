@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\EventSub\Enums.cs" />
+    <Compile Include="API\EventSub\ES_AdBreakBeginNotification.cs" />
     <Compile Include="API\EventSub\ES_AutomodMessageHold.cs" />
     <Compile Include="API\EventSub\ES_ChannelGoalEnd.cs" />
     <Compile Include="API\EventSub\ES_ChannelPoints.cs" />

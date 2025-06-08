@@ -20,6 +20,12 @@ namespace SuiBot_TwitchSocket.Interfaces
 		void TwitchSocket_SuspiciousMessageReceived(ES_Suspicious_UserMessage suspiciousMessage);
 		void TwitchSocket_ChannelPointsRedeem(ES_ChannelPointRedeemRequest redeemInfo);
 		void TwitchSocket_OnChannelGoalEnd(ES_ChannelGoal channelGoalEnded);
+		void TwitchSocket_AdBreakBegin(ES_AdBreakBeginNotification infoAboutAd);
+		/// <summary>
+		/// This isn't actually a part of Twitch - we just abstract it to make it easier on Twitch Socket
+		/// </summary>
+		/// <param name="infoAboutAd">The same ES_AdBreakBeginNotification as at the beginning of an ad break</param>
+		void TwitchSocket_AdBreakFinished(ES_AdBreakBeginNotification infoAboutAd);
 	}
 
 	public interface IChannelInstance
