@@ -133,5 +133,33 @@ namespace SuiBot_TwitchSocket.API.EventSub
 				}
 			}
 		}
+
+		public static explicit operator ES_ChatMessage(ES_ChannelPoints.ES_ChannelPointRedeemRequest channel_point)
+		{
+			return new ES_ChatMessage()
+			{
+				UserRole = Role.User,
+				channel_points_custom_reward_id = channel_point.reward.id,
+				broadcaster_user_id = channel_point.broadcaster_user_id,
+				broadcaster_user_name = channel_point.broadcaster_user_name,
+				broadcaster_user_login = channel_point.broadcaster_user_login,
+				chatter_user_id = channel_point.user_id,
+				chatter_user_name = channel_point.user_name,
+				chatter_user_login = channel_point.user_login,
+				message_id = null,
+				message = new Message()
+				{
+					fragments = new Message.Fragment[] { },
+					text = channel_point.user_input
+				},
+				badges = null,
+				reply = null,
+				cheer = null,
+				color = null,
+				channel_points_animation_id = null,
+				message_type = "text",
+				source_message_id = channel_point.broadcaster_user_id,
+			};
+		}
 	}
 }

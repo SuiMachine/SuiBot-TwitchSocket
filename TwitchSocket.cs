@@ -348,10 +348,25 @@ namespace SuiBot_TwitchSocket
 				case "channel.ad_break.begin":
 					ProcessAdBreakBegin(message.payload);
 					return;
+				case "channel.raid":
+					ProcessChannelRaid(message.payload);
+					return;
 				default:
 					Console.WriteLine($"Unhandled message type: {message.metadata.subscription_type}");
 					return;
 			}
+		}
+
+		private void ProcessChannelRaid(JToken payload)
+		{
+			if (payload["event"] == null)
+				return;
+
+			var obj = payload["event"].ToObject<ES_ChannelRaid>();
+			if (obj == null)
+				return;
+
+			BotInstance?.TwitchSocket_ChannelRaid(obj);
 		}
 
 		private void ProcessAdBreakBegin(JToken payload)

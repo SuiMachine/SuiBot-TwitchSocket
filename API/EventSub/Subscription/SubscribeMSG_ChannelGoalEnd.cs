@@ -7,7 +7,7 @@
 		public ES_Subscribe_Condition condition;
 		public ES_Subscribe_Transport_Websocket transport;
 
-		public SubscribeMSG_ChannelGoalEnd() { }
+		internal SubscribeMSG_ChannelGoalEnd() { }
 
 		public SubscribeMSG_ChannelGoalEnd(string channelId, string sessionID)
 		{

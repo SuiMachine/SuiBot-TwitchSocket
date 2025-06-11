@@ -26,6 +26,7 @@ namespace SuiBot_TwitchSocket.Interfaces
 		/// </summary>
 		/// <param name="infoAboutAd">The same ES_AdBreakBeginNotification as at the beginning of an ad break</param>
 		void TwitchSocket_AdBreakFinished(ES_AdBreakBeginNotification infoAboutAd);
+		void TwitchSocket_ChannelRaid(ES_ChannelRaid raidInfo);
 	}
 
 	public interface IChannelInstance

@@ -8,4 +8,9 @@ namespace SuiBot_TwitchSocket.API.Helix.Responses
 		public string session_id;
 		public DateTime connected_at;
 	}
+
+	public class Pagination
+	{
+		public string cursor;
+	}
 }

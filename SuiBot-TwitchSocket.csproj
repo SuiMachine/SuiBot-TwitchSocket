@@ -52,6 +52,7 @@
     <Compile Include="API\EventSub\ES_AutomodMessageHold.cs" />
     <Compile Include="API\EventSub\ES_ChannelGoalEnd.cs" />
     <Compile Include="API\EventSub\ES_ChannelPoints.cs" />
+    <Compile Include="API\EventSub\ES_ChannelRaid.cs" />
     <Compile Include="API\EventSub\ES_ChatMessages.cs" />
     <Compile Include="API\EventSub\ES_Metadata.cs" />
     <Compile Include="API\EventSub\ES_ReconnectSession.cs" />
@@ -63,6 +64,7 @@
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_AutomodMessageHold.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_ChannelAdBreakBegin.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_ChannelGoalEnd.cs" />
+    <Compile Include="API\EventSub\Subscription\SubscribeMSG_ChannelRaid.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_ChannelSuspeciousUserMessage.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_ReadChannelMessage.cs" />
     <Compile Include="API\EventSub\Subscription\SubscribeMSG_RedemptionAdd.cs" />
@@ -77,6 +79,7 @@
     <Compile Include="API\Helix\Request\Request_SendMessage.cs" />
     <Compile Include="API\Helix\Responses\Response_ChannelInformation.cs" />
     <Compile Include="API\Helix\Responses\Response_ChannelPointInformation.cs" />
+    <Compile Include="API\Helix\Responses\Response_Emote.cs" />
     <Compile Include="API\Helix\Responses\Response_GetUserInfo.cs" />
     <Compile Include="API\Helix\Responses\Response_StreamStatus.cs" />
     <Compile Include="API\Helix\Responses\Response_ValidateToken.cs" />

@@ -209,40 +209,5 @@ namespace SuiBot_TwitchSocket
 				return "";
 			}
 		}
-
-
-		/// <summary>
-		/// A wrapper function for building a URL requests
-		/// </summary>
-		/// <param name="BaseURI">Base of URL</param>
-		/// <param name="variables">Parameters to build on</param>
-		/// <returns>Combined URL</returns>
-		public static Uri BuildRequestUri(string BaseURI, string[] variables)
-		{
-			string uri = BaseURI;
-			for (int i = 0; i < variables.Length; i++)
-			{
-				if (i == 0)
-				{
-					uri += "?" + variables[i];
-				}
-				else
-				{
-					uri += "&" + variables[i];
-				}
-			}
-			return new Uri(uri);
-		}
-
-		/// <summary>
-		/// Formats parameter to key=Value
-		/// </summary>
-		/// <param name="header">Header</param>
-		/// <param name="variable">Variable</param>
-		/// <returns>Formatted parameter</returns>
-		public static string FormatParameter(string header, string variable)
-		{
-			return header + "=" + Uri.EscapeDataString(variable);
-		}
 	}
 }

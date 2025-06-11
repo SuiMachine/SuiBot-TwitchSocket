@@ -323,10 +323,10 @@ namespace SuiBot_TwitchSocket.API
 		/// </summary>
 		/// <param name="twitchLogin">Twitch login name</param>
 		/// <returns>Response_GetUserInfo object or null</returns>
-		private async Task<Response_GetUserInfo> GetUserInfo(string twitchLogin)
+		public async Task<Response_GetUserInfo> GetUserInfoByUserLogin(string twitchLogin)
 		{
-			if (UserNameToInfo.TryGetValue(twitchLogin, out Response_GetUserInfo userId))
-				return userId;
+			if (UserNameToInfo.TryGetValue(twitchLogin, out Response_GetUserInfo userInfo))
+				return userInfo;
 			else
 			{
 				var result = await HttpWebRequestHandlers.PerformGetAsync("https://api.twitch.tv/helix/", "users", $"?login={twitchLogin}", BuildDefaultHeaders());
@@ -335,10 +335,31 @@ namespace SuiBot_TwitchSocket.API
 					var response = JObject.Parse(result);
 					if (response["data"] != null && response["data"].Children().Count() > 0)
 					{
-						var userInfo = response["data"].First.ToObject<Response_GetUserInfo>();
+						userInfo = response["data"].First.ToObject<Response_GetUserInfo>();
 						UserNameToInfo.Add(twitchLogin, userInfo);
 						return userInfo;
 					}
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Gets user information based on Twitch user id
+		/// </summary>
+		/// <param name="userID">Twitch login name</param>
+		/// <returns>Response_GetUserInfo object or null</returns>
+		public async Task<Response_GetUserInfo> GetUserInfoByUserID(string userID)
+		{
+			var result = await HttpWebRequestHandlers.PerformGetAsync("https://api.twitch.tv/helix/", "users", $"?id={userID}", BuildDefaultHeaders());
+			if (!string.IsNullOrEmpty(result))
+			{
+				var response = JObject.Parse(result);
+				if (response["data"] != null && response["data"].Children().Count() > 0)
+				{
+					var userInfo = response["data"].First.ToObject<Response_GetUserInfo>();
+					return userInfo;
 				}
 			}
 
@@ -367,7 +388,7 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>Subscription_Response_Data object or null.</returns>
 		public async Task<Subscription_Response_Data> SubscribeToChatMessage(string twitchLoginName, string sessionId)
 		{
-			Response_GetUserInfo channelInfo = await GetUserInfo(twitchLoginName);
+			Response_GetUserInfo channelInfo = await GetUserInfoByUserLogin(twitchLoginName);
 			if (channelInfo == null)
 				return null;
 
@@ -641,6 +662,28 @@ namespace SuiBot_TwitchSocket.API
 			return false;
 		}
 
+		public async Task<bool> SubscribeToRaidNotification(string channelID, string sessionID)
+		{
+			var request = new SubscribeMSG_ChannelRaid(channelID, sessionID);
+			var serialize = DefaultSerialize(request);
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "eventsub/subscriptions", "", serialize, BuildDefaultHeaders());
+			if (result != null)
+			{
+				Response_SubscribeTo deserialize = JsonConvert.DeserializeObject<Response_SubscribeTo>(result);
+				if (deserialize != null)
+				{
+					deserialize.PerformCostCheck();
+					var channel = deserialize.data.FirstOrDefault(x => x.condition.to_broadcaster_user_id == channelID);
+					return channel != null;
+				}
+				else
+					return false;
+			}
+
+			return false;
+		}
+
 		/// <summary>
 		/// Sends a message in a chat for a specific channel
 		/// </summary>
@@ -887,6 +930,21 @@ namespace SuiBot_TwitchSocket.API
 				}
 				else
 					return foundReward;
+			}
+		}
+
+		public async Task<Response_Emote> GetAvailableEmotes(string broadcasterID, string cursor = null)
+		{
+			string get;
+			if(cursor == null)
+				get = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "chat/emotes/user", $"?user_id={this.BotUserId}&broadcaster_id={broadcasterID}&first=50", BuildDefaultHeaders());
+			else
+				get = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "chat/emotes/user", $"?user_id={this.BotUserId}&broadcaster_id={broadcasterID}&after={cursor}", BuildDefaultHeaders());
+			if (string.IsNullOrEmpty(get))
+				return null;
+			else
+			{
+				return JsonConvert.DeserializeObject<Response_Emote>(get);
 			}
 		}
 

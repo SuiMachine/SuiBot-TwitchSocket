@@ -13,6 +13,8 @@ namespace SuiBot_TwitchSocket.API.EventSub.Subscription.Responses
 			{
 				public string broadcaster_user_id;
 				public string user_id;
+				public string to_broadcaster_user_id;
+				public string from_broadcaster_user_id;
 			}
 
 			public string id;
