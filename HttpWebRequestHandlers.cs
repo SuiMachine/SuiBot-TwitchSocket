@@ -90,10 +90,26 @@ namespace SuiBot_TwitchSocket
 					return await reader.ReadToEndAsync();
 				}
 			}
+			catch (WebException ex)
+			{
+				using (WebResponse response = ex.Response)
+				{
+					ErrorLoggingSocket.WriteLine($"Failed to perform get: {ex}");
+					if (ex.Response.ContentLength > 0)
+					{
+						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
+						ErrorLoggingSocket.WriteLine($"Error content was:");
+						ErrorLoggingSocket.WriteLine(error);
+					}
+					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
+				}
+
+				return "";
+			}
 			catch (Exception e)
 			{
 				ErrorLoggingSocket.WriteLine($"Failed to perform get: {e}");
-				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl + scope}");
+				ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope}");
 				return "";
 			}
 		}
@@ -120,10 +136,26 @@ namespace SuiBot_TwitchSocket
 					return result;
 				}
 			}
+			catch (WebException ex)
+			{
+				using (WebResponse response = ex.Response)
+				{
+					ErrorLoggingSocket.WriteLine($"Failed to perform delete: {ex}");
+					if (ex.Response.ContentLength > 0)
+					{
+						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
+						ErrorLoggingSocket.WriteLine($"Error content was:");
+						ErrorLoggingSocket.WriteLine(error);
+					}
+					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
+				}
+
+				return "";
+			}
 			catch (Exception ex)
 			{
 				ErrorLoggingSocket.WriteLine($"Failed to perform delete: {ex}");
-				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl + scope + parameters}");
+				ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
 				return "";
 			}
 		}
@@ -159,6 +191,23 @@ namespace SuiBot_TwitchSocket
 				{
 					return await reader.ReadToEndAsync();
 				}
+			}
+			catch (WebException ex)
+			{
+				using (WebResponse response = ex.Response)
+				{
+					ErrorLoggingSocket.WriteLine($"Failed to perform post: {ex}");
+					if (ex.Response.ContentLength > 0)
+					{
+						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
+						ErrorLoggingSocket.WriteLine($"Error content was:");
+						ErrorLoggingSocket.WriteLine(error);
+					}
+					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
+					ErrorLoggingSocket.WriteLine($"Content was: {postData}");
+				}
+
+				return "";
 			}
 			catch (Exception e)
 			{
@@ -200,6 +249,22 @@ namespace SuiBot_TwitchSocket
 				{
 					return await reader.ReadToEndAsync();
 				}
+			}
+			catch (WebException ex)
+			{
+				using (WebResponse response = ex.Response)
+				{
+					ErrorLoggingSocket.WriteLine($"Failed to perform patch: {ex}");
+					if (ex.Response.ContentLength > 0)
+					{
+						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
+						ErrorLoggingSocket.WriteLine($"Error content was:");
+						ErrorLoggingSocket.WriteLine(error);
+					}
+					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
+					ErrorLoggingSocket.WriteLine($"Content was: {patchData}");
+				}
+				return "";
 			}
 			catch (Exception e)
 			{
