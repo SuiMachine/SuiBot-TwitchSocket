@@ -63,6 +63,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>Task</returns>
 		public async Task StartCommercial(uint length)
 		{
+			if (!Scopes.Contains("channel:read:ads"))
+			{
+				ErrorLoggingSocket.WriteLine("Client doesn't have required scope");
+				return;
+			}
+
 			if (length > 180)
 				length = 180;
 
@@ -315,6 +321,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="messageID">Message to delete</param>
 		public void RequestRemoveMessage(ES_ChatMessage messageID)
 		{
+			if (!Scopes.Contains("moderator:manage:chat_messages"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:chat_messages");
+				return;
+			}
+
 			Task.Run(async () =>
 			{
 				try
@@ -336,6 +348,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="reason">Optimal reason for a timeout - can be null</param>
 		public void RequestTimeout(ES_ChatMessage message, TimeSpan length, string reason)
 		{
+			if (!Scopes.Contains("moderator:manage:banned_users"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:banned_users ");
+				return;
+			}
+
 			Task.Run(async () =>
 			{
 				var serialize = JsonConvert.SerializeObject(Request_Ban.CreateTimeout(message.chatter_user_id, length, reason), Formatting.Indented, new JsonSerializerSettings()
@@ -356,6 +374,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="reason">Optimal reason for a timeout - can be null</param>
 		public void RequestTimeout(ES_ChatMessage message, uint length, string reason)
 		{
+			if (!Scopes.Contains("moderator:manage:banned_users"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:banned_users ");
+				return;
+			}
+
 			Task.Run(async () =>
 			{
 				var serialize = JsonConvert.SerializeObject(Request_Ban.CreateTimeout(message.chatter_user_id, (int)length, reason), Formatting.Indented, new JsonSerializerSettings()
@@ -364,12 +388,17 @@ namespace SuiBot_TwitchSocket.API
 				});
 
 				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "moderation/bans", $"?broadcaster_id={message.broadcaster_user_id}&moderator_id={User_Id}", serialize, BuildDefaultHeaders());
-
 			});
 		}
 
 		public void RequestTimeout(string broadcaster_id, string chatter_user_id, uint length, string reason)
 		{
+			if (!Scopes.Contains("moderator:manage:banned_users"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:banned_users ");
+				return;
+			}
+
 			Task.Run(async () =>
 			{
 				var serialize = JsonConvert.SerializeObject(Request_Ban.CreateTimeout(chatter_user_id, (int)length, reason), Formatting.Indented, new JsonSerializerSettings()
@@ -378,7 +407,6 @@ namespace SuiBot_TwitchSocket.API
 				});
 
 				var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "moderation/bans", $"?broadcaster_id={broadcaster_id}&moderator_id={User_Id}", serialize, BuildDefaultHeaders());
-
 			});
 		}
 
@@ -389,6 +417,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="reason">Optimal reason for a ban - can be null</param>
 		public void RequestBan(ES_ChatMessage message, string reason)
 		{
+			if (!Scopes.Contains("moderator:manage:banned_users"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:banned_users ");
+				return;
+			}
+
 			Task.Run(async () =>
 			{
 				var serialize = JsonConvert.SerializeObject(Request_Ban.CreateBan(message.chatter_user_id, reason), Formatting.Indented, new JsonSerializerSettings()
@@ -408,6 +442,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="reason">Optimal reason for a ban - can be null</param>
 		public void RequestBan(string broadcaster_id, string chatter_user_id, string reason)
 		{
+			if (!Scopes.Contains("moderator:manage:banned_users"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:banned_users ");
+				return;
+			}
+
 			Task.Run(async () =>
 			{
 				var serialize = JsonConvert.SerializeObject(Request_Ban.CreateBan(chatter_user_id, reason), Formatting.Indented, new JsonSerializerSettings()
@@ -469,6 +509,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>True/False based on whatever it was successful</returns>
 		public async Task<bool> CreateStreamMarker(string description)
 		{
+			if (!Scopes.Contains("channel:manage:broadcast"))
+			{
+				ErrorLoggingSocket.WriteLine("Client doesn't have a scope channel:manage:broadcast");
+				return false;
+			}
+
 			if (description != null && description.Length > 140)
 				description = description.Substring(0, 140);
 
@@ -560,6 +606,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="text">Text to send in chat</param>
 		public async Task SendMessageAsync(IChannelInstance instance, string text)
 		{
+			if (!Scopes.Contains("user:write:chat"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have user:write:chat");
+				return;
+			}
+
 			var content = Request_SendChatMessage.CreateMessage(instance.ChannelID, User_Id.ToString(), text);
 			var serialize = DefaultSerialize(content);
 
@@ -573,6 +625,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="message">Content of the response</param>
 		public async Task SendResponseAsync(ES_ChatMessage messageToRespondTo, string message)
 		{
+			if (!Scopes.Contains("user:write:chat"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have user:write:chat");
+				return;
+			}
+
 			var content = Request_SendChatMessage.CreateResponse(messageToRespondTo.broadcaster_user_id.ToString(), User_Id.ToString(), messageToRespondTo.message_id, message);
 			var serialize = DefaultSerialize(content);
 
@@ -581,6 +639,12 @@ namespace SuiBot_TwitchSocket.API
 
 		public async Task SendResponseAsync(string broadcaster_id, string message_id, string message)
 		{
+			if(!Scopes.Contains("user:write:chat"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have user:write:chat");
+				return;
+			}
+
 			var content = Request_SendChatMessage.CreateResponse(broadcaster_id, User_Id.ToString(), message_id, message);
 			var serialize = DefaultSerialize(content);
 
@@ -596,6 +660,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>Task</returns>
 		public async Task SendAnnouncement(string broadcaster_id, string message, Request_Announcement.Color color = Request_Announcement.Color.primary)
 		{
+			if (!Scopes.Contains("moderator:manage:announcements"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:announcements");
+				return;
+			}
+
 			var content = Request_Announcement.CreateAnnouncement(message, color);
 			var serialize = DefaultSerialize(content);
 
@@ -610,6 +680,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>Task without a result</returns>
 		public async Task SendShoutout(string channel_id, string target_channel_id)
 		{
+			if(!Scopes.Contains("moderator:manage:shoutouts"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:shoutouts");
+				return;
+			}
+
 			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "chat/shoutouts", $"?from_broadcaster_id={channel_id}&to_broadcaster_id={target_channel_id}&moderator_id={User_Id}", "", BuildDefaultHeaders());
 		}
 
@@ -617,7 +693,7 @@ namespace SuiBot_TwitchSocket.API
 		/// Gets the list of current subscriptions - this should be done when connecting or disconnecting with a websocket and to 
 		/// </summary>
 		/// <returns>Response_SubscribeTo object containing information about your current and previous subscriptions including costs</returns>
-		public async Task<Response_SubscribeTo> GetCurrentSubscriptions()
+		public async Task<Response_SubscribeTo> GetCurrentEventSubscriptions()
 		{
 			var result = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "eventsub/subscriptions", "", BuildDefaultHeaders());
 			if (result != null)
@@ -651,6 +727,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <param name="fullfilmentStatus">Status to set (has to be either FULFILLED / CANCELLED)</param>
 		public void UpdateRedemptionStatus(ES_ChannelPoints.ES_ChannelPointRedeemRequest redeem, ES_ChannelPoints.RedemptionStates fullfilmentStatus)
 		{
+			if (!Scopes.Contains("channel:manage:redemptions"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have channel:manage:redemptions");
+				return;
+			}
+
 			Task.Run(async () =>
 			{
 				if (fullfilmentStatus == ES_ChannelPoints.RedemptionStates.UNFULFILLED)
@@ -671,6 +753,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>True/False depending on success of the operation</returns>
 		public async Task<bool> CreateRewardsCache()
 		{
+			if (!Scopes.Contains("channel:manage:redemptions"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have channel:manage:redemptions");
+				return false;
+			}
+
 			var rewardsRequest = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={User_Id}&only_manageable_rewards=true", BuildDefaultHeaders());
 			if (string.IsNullOrEmpty(rewardsRequest))
 			{
@@ -695,6 +783,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>True/False depending on success of the operation</returns>
 		public async Task<bool> DeleteCustomReward(Response_ChannelPointInformation reward)
 		{
+			if (!Scopes.Contains("channel:manage:redemptions"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have channel:manage:redemptions");
+				return false;
+			}
+
 			var result = await HttpWebRequestHandlers.PerformDeleteAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={reward.broadcaster_id}&id={reward.id}", BuildDefaultHeaders());
 			if (result != null)
 				return true;
@@ -716,6 +810,12 @@ namespace SuiBot_TwitchSocket.API
 		/// <exception cref="Exception">Exception if rewards cache could not be created</exception>
 		public async Task<Response_ChannelPointInformation> CreateOrUpdateReward(string rewardID, string rewardTitle, string rewardDescription, int rewardCost, int rewardCooldown, bool isEnabled, bool isUserInputRequired)
 		{
+			if (!Scopes.Contains("channel:manage:redemptions"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have channel:manage:redemptions");
+				return null;
+			}
+
 			Response_ChannelPointInformation foundReward = null;
 			if (RewardsCache == null && rewardID != null)
 			{

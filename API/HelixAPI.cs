@@ -3,6 +3,7 @@ using SuiBot_TwitchSocket.API.Helix.Responses;
 using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SuiBot_TwitchSocket.API
 {
@@ -20,6 +21,7 @@ namespace SuiBot_TwitchSocket.API
 		public string User_LoginName { get; private set; }
 		public string User_Id { get; private set; }
 		public string CLIENT_ID { get; private set; }
+		private HashSet<string> Scopes = new HashSet<string>();
 
 #if LOCAL_API
 		//Local user - 92987419
@@ -91,6 +93,7 @@ namespace SuiBot_TwitchSocket.API
 			var validation = JsonConvert.DeserializeObject<Response_ValidateToken>(res);
 			this.User_LoginName = validation.login;
 			this.User_Id = validation.user_id;
+			this.Scopes = validation.scopes.ToHashSet();
 			return validation;
 		}
 
