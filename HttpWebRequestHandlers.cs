@@ -95,7 +95,7 @@ namespace SuiBot_TwitchSocket
 				using (WebResponse response = ex.Response)
 				{
 					ErrorLoggingSocket.WriteLine($"Failed to perform get: {ex}");
-					if (ex.Response.ContentLength > 0)
+					if (ex?.Response.ContentLength > 0)
 					{
 						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
 						ErrorLoggingSocket.WriteLine($"Error content was:");
@@ -141,7 +141,7 @@ namespace SuiBot_TwitchSocket
 				using (WebResponse response = ex.Response)
 				{
 					ErrorLoggingSocket.WriteLine($"Failed to perform delete: {ex}");
-					if (ex.Response.ContentLength > 0)
+					if (ex?.Response.ContentLength > 0)
 					{
 						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
 						ErrorLoggingSocket.WriteLine($"Error content was:");
@@ -197,7 +197,7 @@ namespace SuiBot_TwitchSocket
 				using (WebResponse response = ex.Response)
 				{
 					ErrorLoggingSocket.WriteLine($"Failed to perform post: {ex}");
-					if (ex.Response.ContentLength > 0)
+					if (ex?.Response.ContentLength > 0)
 					{
 						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
 						ErrorLoggingSocket.WriteLine($"Error content was:");
@@ -255,7 +255,7 @@ namespace SuiBot_TwitchSocket
 				using (WebResponse response = ex.Response)
 				{
 					ErrorLoggingSocket.WriteLine($"Failed to perform patch: {ex}");
-					if (ex.Response.ContentLength > 0)
+					if (ex?.Response.ContentLength > 0)
 					{
 						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
 						ErrorLoggingSocket.WriteLine($"Error content was:");

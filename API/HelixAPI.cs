@@ -66,6 +66,7 @@ namespace SuiBot_TwitchSocket.API
 
 			User_LoginName = obj.login;
 			User_Id = obj.user_id;
+			Scopes = obj.scopes.ToHashSet();
 			if (obj.expires_in < 60 * 60 * 24 * 7) //expires in less than 7 days
 			{
 				var ts = TimeSpan.FromSeconds(obj.expires_in);
