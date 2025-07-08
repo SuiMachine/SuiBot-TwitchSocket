@@ -735,7 +735,7 @@ namespace SuiBot_TwitchSocket.API
 
 			Task.Run(async () =>
 			{
-				if (fullfilmentStatus == ES_ChannelPoints.RedemptionStates.UNFULFILLED)
+				if (fullfilmentStatus != ES_ChannelPoints.RedemptionStates.UNFULFILLED)
 					return; //I have no idea why would anyone do this
 				var redeemStatus = Helix.Request.Request_UpdateChannelPointsRedemptionStatus.UpdateWith(fullfilmentStatus);
 				var serialize = JsonConvert.SerializeObject(redeemStatus, Formatting.Indented, new JsonSerializerSettings()
