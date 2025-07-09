@@ -4,8 +4,11 @@ using SuiBot_TwitchSocket.API.EventSub;
 using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Diagnostics;
+using System.Net.Sockets;
+using System.Net.WebSockets;
+using System.Threading;
 using System.Threading.Tasks;
-using WebSocketSharp;
+using Websocket.Client;
 using static SuiBot_TwitchSocket.API.EventSub.ES_ChannelPoints;
 
 namespace SuiBot_TwitchSocket
@@ -38,7 +41,7 @@ namespace SuiBot_TwitchSocket
 		public bool Connecting => m_Connecting;
 		public volatile bool AutoReconnect;
 		public DateTime LastMessageAt { get; private set; }
-		public WebSocket Socket { get; private set; }
+		public Websocket.Client.WebsocketClient Socket { get; private set; }
 		private System.Timers.Timer DelayConnectionTimer;
 		private System.Timers.Timer KeepAliveCheck;
 		private System.Timers.Timer m_Temp_AdBreakEnd;
@@ -53,16 +56,16 @@ namespace SuiBot_TwitchSocket
 			if (string.IsNullOrEmpty(WEBSOCKET_CONNECT_URI))
 				WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
 
-			Socket = new WebSocket(WEBSOCKET_CONNECT_URI);
+			Socket = new WebsocketClient(new Uri(WEBSOCKET_CONNECT_URI));
 #if !LOCAL_API
-			Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+			//Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 #endif
 
-			Socket.OnMessage += Socket_OnMessage;
-			Socket.OnOpen += Socket_OnOpen;
-			Socket.OnClose += Socket_OnClose;
-			Socket.OnError += Socket_OnError;
-			Socket.EmitOnPing = true;
+			Socket.ReconnectTimeout = TimeSpan.FromSeconds(30);
+			Socket.ReconnectionHappened.Subscribe(info => Socket_Reconnected(Socket, info));
+			Socket.MessageReceived.Subscribe(msg => Socket_OnMessage(Socket, msg));
+			Socket.DisconnectionHappened.Subscribe(disconnectMsg => Socket_OnClose(Socket, disconnectMsg));
+
 			DelayConnectionTimer?.Dispose();
 
 			if (delay <= 0)
@@ -83,35 +86,47 @@ namespace SuiBot_TwitchSocket
 			};
 			DelayConnectionTimer.Elapsed += ((sender, e) =>
 			{
-				Socket.ConnectAsync();
+				Task.Run(async () =>
+				{
+					await Socket.Start();
+					if (Socket.IsRunning)
+					{
+						Socket_OnOpen(Socket);
+					}
+				});
 			});
-		}
-
-		private void Socket_OnError(object sender, ErrorEventArgs e)
-		{
-			if (sender == Socket)
-				ErrorLoggingSocket.WriteLine($"Got error: {e}");
-			else
-				ErrorLoggingSocket.WriteLine($"Auxiliary socket error: {e}");
 		}
 
 		private void ReconnectWithUrl(string reconnect_url)
 		{
 			//rewrite this - it needs 2 sockets running and checking receiver
-			var newSocket = new WebSocket(reconnect_url);
-			newSocket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+			var newSocket = new WebsocketClient(new Uri(reconnect_url));
+			//newSocket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 
 			this.AutoReconnect = true;
 			this.WEBSOCKET_CONNECT_URI = reconnect_url;
-			newSocket.OnClose += Socket_OnClose;
-			newSocket.OnError += Socket_OnError;
-			newSocket.OnMessage += Socket_OnMessage;
-			newSocket.OnOpen += Socket_OnOpen;
-			newSocket.EmitOnPing = true;
-			newSocket.ConnectAsync();
+			newSocket.ReconnectTimeout = TimeSpan.FromSeconds(30);
+			newSocket.DisconnectionHappened.Subscribe(disconnectMsg => Socket_OnClose(newSocket, disconnectMsg));
+			newSocket.MessageReceived.Subscribe(msg => Socket_OnMessage(newSocket, msg));
+			newSocket.ReconnectionHappened.Subscribe(msg => Socket_Reconnected(newSocket, msg));
+
+
+			Task.Run(async () =>
+			{
+				await newSocket.Start();
+				if (newSocket.IsRunning)
+				{
+					Socket_OnOpen(newSocket);
+				}
+			});
 		}
 
-		private void Socket_OnOpen(object sender, EventArgs e)
+		private void Socket_Reconnected(WebsocketClient sender, ReconnectionInfo info)
+		{
+			ErrorLoggingSocket.WriteLine($"Reconnected {info.Type}");
+		}
+
+		private void Socket_OnOpen(WebsocketClient sender)
 		{
 			if (sender == Socket)
 			{
@@ -134,31 +149,22 @@ namespace SuiBot_TwitchSocket
 		{
 			var currentTime = DateTime.UtcNow;
 			if (LastMessageAt + TimeSpan.FromSeconds(45) < currentTime)
-				Socket.Close();
+				Socket.Stop(System.Net.WebSockets.WebSocketCloseStatus.EndpointUnavailable, "KeepAlive failed");
 		}
 
-		private void Socket_OnClose(object sender, CloseEventArgs e)
+		private void Socket_OnClose(Websocket.Client.WebsocketClient socketToClose, DisconnectionInfo e)
 		{
-			var socketToClose = (WebSocket)sender;
-			if (sender != Socket)
+			if (socketToClose != Socket)
 			{
-				ErrorLoggingSocket.WriteLine($"Secondary socket closed with code {e.Code} - {e?.Reason ?? "None"}");
-				socketToClose.OnMessage -= Socket_OnMessage;
-				socketToClose.OnOpen -= Socket_OnOpen;
-				socketToClose.OnClose -= Socket_OnClose;
-				socketToClose.OnError -= Socket_OnError;
+				ErrorLoggingSocket.WriteLine($"Secondary socket closed with code {e.Type} - {e.Exception?.Message ?? "None"}");
 				return;
 			}
 
-			EventSubClose_Code closeType = (EventSubClose_Code)e.Code;
+			EventSubClose_Code closeType = (EventSubClose_Code)e.CloseStatus;
 			m_Connected = false;
 			m_Connecting = false;
 			KeepAliveCheck?.Stop();
-			ErrorLoggingSocket.WriteLine($"Closed due to code {e.Code} - {e?.Reason ?? "None"}");
-			socketToClose.OnMessage -= Socket_OnMessage;
-			socketToClose.OnOpen -= Socket_OnOpen;
-			socketToClose.OnClose -= Socket_OnClose;
-			socketToClose.OnError -= Socket_OnError;
+			ErrorLoggingSocket.WriteLine($"Closed due to code {e.CloseStatus} - {e?.Exception?.Message ?? "None"}");
 
 			if (Reconnect_Failures > 100)
 			{
@@ -170,30 +176,29 @@ namespace SuiBot_TwitchSocket
 			if (AutoReconnect)
 			{
 				int delay = 0;
-				switch (e.Code)
+				switch ((ushort)e.CloseStatus)
 				{
-					case (ushort)CloseStatusCode.Normal:
+					case (ushort)WebSocketCloseStatus.NormalClosure:
 						delay = 0;
 						break;
-					case (ushort)CloseStatusCode.Away:
-					case (ushort)CloseStatusCode.UnsupportedData:
+					case (ushort)WebSocketCloseStatus.EndpointUnavailable:
 						delay = 60_000;
 						break;
 					case 4000: //Internal server error
 					case 4005: //Network timeout
 					case 4006: //Network error
-					case (ushort)CloseStatusCode.ProtocolError:
-					case (ushort)CloseStatusCode.Undefined:
-					case (ushort)CloseStatusCode.Abnormal:
-					case (ushort)CloseStatusCode.TooBig:
-					case (ushort)CloseStatusCode.ServerError:
-					case (ushort)CloseStatusCode.TlsHandshakeFailure:
+					case (ushort)WebSocketCloseStatus.ProtocolError:
+					//case (ushort)WebSocketCloseStatus.Undefined:
+					//case (ushort)WebSocketCloseStatus.Abnormal:
+					case (ushort)WebSocketCloseStatus.MessageTooBig:
+					case (ushort)WebSocketCloseStatus.InternalServerError:
+						//case (ushort)CloseStatusCode.TlsHandshakeFailure:
 						delay = 60_000;
 						WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
 						break;
-					case (ushort)CloseStatusCode.InvalidData:
-					case (ushort)CloseStatusCode.PolicyViolation:
-					case (ushort)CloseStatusCode.MandatoryExtension:
+					case (ushort)WebSocketCloseStatus.InvalidPayloadData:
+					case (ushort)WebSocketCloseStatus.PolicyViolation:
+					case (ushort)WebSocketCloseStatus.MandatoryExtension:
 						AutoReconnect = false;
 						BotInstance?.TwitchSocket_ClosedViaSocket();
 						return;
@@ -221,7 +226,7 @@ namespace SuiBot_TwitchSocket
 						ErrorLoggingSocket.WriteLine("Data was send via websocket! THIS IS SO WRONG");
 						BotInstance?.TwitchSocket_ClosedViaSocket();
 						return;
-					case (ushort)CloseStatusCode.NoStatus:
+					case (ushort)WebSocketCloseStatus.Empty:
 					default:
 						delay = 10_000;
 						break;
@@ -240,14 +245,14 @@ namespace SuiBot_TwitchSocket
 			}
 		}
 
-		private void Socket_OnMessage(object sender, MessageEventArgs e)
+		private void Socket_OnMessage(WebsocketClient sourceSocket, ResponseMessage e)
 		{
-			if (sender == Socket)
+			if (sourceSocket == Socket)
 			{
-				var message = JsonConvert.DeserializeObject<ES_ServerMessage>(e.Data);
+				var message = JsonConvert.DeserializeObject<ES_ServerMessage>(e.Text);
 				if (message == null)
 				{
-					Socket.Ping();
+					//Should be ping?
 					return;
 				}
 
@@ -255,7 +260,7 @@ namespace SuiBot_TwitchSocket
 				switch (message.metadata.message_type)
 				{
 					case EventSub_MessageType.session_welcome:
-						ProcessWelcome(message.payload, (WebSocket)sender);
+						ProcessWelcome(message.payload, sourceSocket);
 						break;
 					case EventSub_MessageType.session_keepalive:
 						break;
@@ -272,10 +277,10 @@ namespace SuiBot_TwitchSocket
 			}
 			else
 			{
-				var message = JsonConvert.DeserializeObject<ES_ServerMessage>(e.Data);
+				var message = JsonConvert.DeserializeObject<ES_ServerMessage>(e.Text);
 				if (message == null)
 				{
-					Socket.Ping();
+					//Socket.Ping();
 					return;
 				}
 
@@ -283,7 +288,7 @@ namespace SuiBot_TwitchSocket
 				switch (message.metadata.message_type)
 				{
 					case EventSub_MessageType.session_welcome:
-						ProcessWelcome(message.payload, (WebSocket)sender);
+						ProcessWelcome(message.payload, sourceSocket);
 						break;
 					default:
 						Debug.WriteLine($"Unhandled message: {message}");
@@ -491,18 +496,14 @@ namespace SuiBot_TwitchSocket
 			BotInstance?.TwitchSocket_SuspiciousMessageReceived(msg);
 		}
 
-		private void ProcessWelcome(JToken payload, WebSocket socket)
+		private void ProcessWelcome(JToken payload, Websocket.Client.WebsocketClient socket)
 		{
 			var content = payload["session"].ToObject<ES_SessionMessage>();
 			if (socket != Socket)
 			{
 				SessionID = content.id;
 				ErrorLoggingSocket.WriteLine("Closing primary socket and swapping secondary to be primary!");
-				Socket.OnMessage -= Socket_OnMessage;
-				Socket.OnOpen -= Socket_OnOpen;
-				Socket.OnClose -= Socket_OnClose;
-				Socket.OnError -= Socket_OnError;
-				Socket.Close();
+				Socket.Stop(WebSocketCloseStatus.NormalClosure, "Closing primary socket and swapping secondary to be primary!");
 				Socket = socket;
 				AutoReconnect = true;
 				WEBSOCKET_CONNECT_URI = null;
@@ -519,7 +520,7 @@ namespace SuiBot_TwitchSocket
 		internal void Close()
 		{
 			AutoReconnect = false;
-			Socket?.Close();
+			Socket?.Stop(WebSocketCloseStatus.NormalClosure, "Intended Closure");
 			DelayConnectionTimer?.Dispose();
 		}
 	}
