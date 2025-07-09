@@ -1,6 +1,6 @@
 # SuiBot-TwitchSocket
 
-A .NET 9.0 library for handling connections to Twitch services.
+A .NET 8.0 library for handling connections to Twitch services.
 
 Credits
 -------
