@@ -152,7 +152,7 @@ namespace SuiBot_Core.Extensions.SuiStringExtension
 			var stringBuilder = new StringBuilder(500);
 			for (int i = 0; i < split.Length; i++)
 			{
-				if (stringBuilder.Length + 1 + split[i].Length > 500)
+				if (stringBuilder.Length + 1 + split[i].Length > length)
 				{
 					result.Add(stringBuilder.ToString());
 					stringBuilder.Clear();

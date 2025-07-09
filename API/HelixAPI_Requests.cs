@@ -8,11 +8,9 @@ using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using static SuiBot_TwitchSocket.API.EventSub.Subscription.Responses.Response_SubscribeTo;
-using static SuiBot_TwitchSocket.API.Helix.Request.Request_ModifyChannelInformation;
 using static SuiBot_TwitchSocket.API.Helix.Responses.Response_AdSnooze;
 
 namespace SuiBot_TwitchSocket.API
