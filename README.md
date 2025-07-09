@@ -1,12 +1,12 @@
 # SuiBot-TwitchSocket
 
-A .NET Framework compatible library for handling connections to Twitch services.
+A .NET 9.0 library for handling connections to Twitch services.
 
 Credits
 -------
   * [Sui](https://www.twitch.tv/sui_vt)
-  * Bot uses [Newtonsoft.Json](https://www.newtonsoft.com/json) for JSON serialisation.
-  * Bot uses [WebSocket-Sharp](https://github.com/sta/websocket-sharp) for communication with Twitch.  
+  * TwitchSocket uses [Newtonsoft.Json](https://www.newtonsoft.com/json) for JSON serialisation.
+  * TwitchSocket uses [websocket-client](https://github.com/Marfusios/websocket-client) for communication with Twitch.  
   
 Licence
 -------

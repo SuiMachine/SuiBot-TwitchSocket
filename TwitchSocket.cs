@@ -89,10 +89,6 @@ namespace SuiBot_TwitchSocket
 				Task.Run(async () =>
 				{
 					await Socket.Start();
-					if (Socket.IsRunning)
-					{
-						Socket_OnOpen(Socket);
-					}
 				});
 			});
 		}
@@ -110,19 +106,19 @@ namespace SuiBot_TwitchSocket
 			newSocket.MessageReceived.Subscribe(msg => Socket_OnMessage(newSocket, msg));
 			newSocket.ReconnectionHappened.Subscribe(msg => Socket_Reconnected(newSocket, msg));
 
-
 			Task.Run(async () =>
 			{
 				await newSocket.Start();
-				if (newSocket.IsRunning)
-				{
-					Socket_OnOpen(newSocket);
-				}
 			});
 		}
 
 		private void Socket_Reconnected(WebsocketClient sender, ReconnectionInfo info)
 		{
+			if (info.Type == ReconnectionType.Initial)
+			{
+				Socket_OnOpen(sender);
+				return;
+			}
 			ErrorLoggingSocket.WriteLine($"Reconnected {info.Type}");
 		}
 
