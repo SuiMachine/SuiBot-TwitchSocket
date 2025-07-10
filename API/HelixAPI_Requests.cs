@@ -637,7 +637,7 @@ namespace SuiBot_TwitchSocket.API
 
 		public async Task SendResponseAsync(string broadcaster_id, string message_id, string message)
 		{
-			if(!Scopes.Contains("user:write:chat"))
+			if (!Scopes.Contains("user:write:chat"))
 			{
 				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have user:write:chat");
 				return;
@@ -678,7 +678,7 @@ namespace SuiBot_TwitchSocket.API
 		/// <returns>Task without a result</returns>
 		public async Task SendShoutout(string channel_id, string target_channel_id)
 		{
-			if(!Scopes.Contains("moderator:manage:shoutouts"))
+			if (!Scopes.Contains("moderator:manage:shoutouts"))
 			{
 				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:manage:shoutouts");
 				return;

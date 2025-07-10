@@ -119,7 +119,11 @@ namespace SuiBot_TwitchSocket
 				Socket_OnOpen(sender);
 				return;
 			}
+			else
+			{
+				Socket_OnOpen(sender);
 			ErrorLoggingSocket.WriteLine($"Reconnected {info.Type}");
+		}
 		}
 
 		private void Socket_OnOpen(WebsocketClient sender)
@@ -156,7 +160,7 @@ namespace SuiBot_TwitchSocket
 				return;
 			}
 
-			EventSubClose_Code closeType = (EventSubClose_Code)e.CloseStatus;
+			EventSubClose_Code closeType = e.CloseStatus == null ? EventSubClose_Code.client_failed_pingpong : (EventSubClose_Code)e.CloseStatus;
 			m_Connected = false;
 			m_Connecting = false;
 			KeepAliveCheck?.Stop();
@@ -172,7 +176,7 @@ namespace SuiBot_TwitchSocket
 			if (AutoReconnect)
 			{
 				int delay = 0;
-				switch ((ushort)e.CloseStatus)
+				switch ((ushort)closeType)
 				{
 					case (ushort)WebSocketCloseStatus.NormalClosure:
 						delay = 0;
