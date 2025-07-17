@@ -57,11 +57,12 @@ namespace SuiBot_TwitchSocket
 				WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
 
 			Socket = new WebsocketClient(new Uri(WEBSOCKET_CONNECT_URI));
+			Socket.IsReconnectionEnabled = false;
+
 #if !LOCAL_API
 			//Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 #endif
 
-			Socket.ReconnectTimeout = TimeSpan.FromSeconds(30);
 			Socket.ReconnectionHappened.Subscribe(info => Socket_Reconnected(Socket, info));
 			Socket.MessageReceived.Subscribe(msg => Socket_OnMessage(Socket, msg));
 			Socket.DisconnectionHappened.Subscribe(disconnectMsg => Socket_OnClose(Socket, disconnectMsg));
@@ -90,6 +91,11 @@ namespace SuiBot_TwitchSocket
 				{
 					await Socket.Start();
 				});
+				if (DelayConnectionTimer == sender)
+				{
+					DelayConnectionTimer.Dispose();
+					DelayConnectionTimer = null;
+				}
 			});
 		}
 
@@ -97,11 +103,11 @@ namespace SuiBot_TwitchSocket
 		{
 			//rewrite this - it needs 2 sockets running and checking receiver
 			var newSocket = new WebsocketClient(new Uri(reconnect_url));
+			newSocket.IsReconnectionEnabled = false;
 			//newSocket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 
 			this.AutoReconnect = true;
 			this.WEBSOCKET_CONNECT_URI = reconnect_url;
-			newSocket.ReconnectTimeout = TimeSpan.FromSeconds(30);
 			newSocket.DisconnectionHappened.Subscribe(disconnectMsg => Socket_OnClose(newSocket, disconnectMsg));
 			newSocket.MessageReceived.Subscribe(msg => Socket_OnMessage(newSocket, msg));
 			newSocket.ReconnectionHappened.Subscribe(msg => Socket_Reconnected(newSocket, msg));
@@ -114,16 +120,16 @@ namespace SuiBot_TwitchSocket
 
 		private void Socket_Reconnected(WebsocketClient sender, ReconnectionInfo info)
 		{
-			if (info.Type == ReconnectionType.Initial)
+			switch(info.Type)
 			{
-				Socket_OnOpen(sender);
-				return;
+				case ReconnectionType.Initial:
+					Socket_OnOpen(sender);
+					break;
+				default:
+					Socket_OnOpen(sender);
+					ErrorLoggingSocket.WriteLine($"Reconnection happend of type {info.Type}");
+					break;
 			}
-			else
-			{
-				Socket_OnOpen(sender);
-			ErrorLoggingSocket.WriteLine($"Reconnected {info.Type}");
-		}
 		}
 
 		private void Socket_OnOpen(WebsocketClient sender)
@@ -149,10 +155,10 @@ namespace SuiBot_TwitchSocket
 		{
 			var currentTime = DateTime.UtcNow;
 			if (LastMessageAt + TimeSpan.FromSeconds(45) < currentTime)
-				Socket.Stop(System.Net.WebSockets.WebSocketCloseStatus.EndpointUnavailable, "KeepAlive failed");
+				Socket.Stop(WebSocketCloseStatus.EndpointUnavailable, "KeepAlive failed");
 		}
 
-		private void Socket_OnClose(Websocket.Client.WebsocketClient socketToClose, DisconnectionInfo e)
+		private void Socket_OnClose(WebsocketClient socketToClose, DisconnectionInfo e)
 		{
 			if (socketToClose != Socket)
 			{
