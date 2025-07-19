@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using static SuiBot_TwitchSocket.API.EventSub.Subscription.Responses.Response_SubscribeTo;
 using static SuiBot_TwitchSocket.API.Helix.Responses.Response_AdSnooze;
@@ -201,7 +202,7 @@ namespace SuiBot_TwitchSocket.API
 			else if (names.Length > 100)
 				return null;
 
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new();
 			foreach (var name in names)
 			{
 				if (sb.Length == 0)
@@ -309,6 +310,28 @@ namespace SuiBot_TwitchSocket.API
 			else
 			{
 				ErrorLoggingSocket.WriteLine($"Error checking status for {channelID}");
+				return null;
+			}
+		}
+
+		public async Task<Response_SharedSession> GetChatSharedSession(string channelID)
+		{
+			var result = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "shared_chat/session", $"?broadcaster_id={channelID}", BuildDefaultHeaders());
+			if(result != "")
+			{
+				var deserialize = JsonConvert.DeserializeObject<JToken>(result);
+				if (deserialize["data"] != null)
+				{
+					var node = deserialize["data"].ToString();
+					var content = deserialize["data"].ToObject<Response_SharedSession[]>();
+					return content.FirstOrDefault();
+				}
+				else
+					return null;
+			}
+			else
+			{
+				ErrorLoggingSocket.WriteLine($"Error checking shared chat state for {channelID}");
 				return null;
 			}
 		}

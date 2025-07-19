@@ -4,9 +4,7 @@ using SuiBot_TwitchSocket.API.EventSub;
 using SuiBot_TwitchSocket.Interfaces;
 using System;
 using System.Diagnostics;
-using System.Net.Sockets;
 using System.Net.WebSockets;
-using System.Threading;
 using System.Threading.Tasks;
 using Websocket.Client;
 using static SuiBot_TwitchSocket.API.EventSub.ES_ChannelPoints;
@@ -120,7 +118,7 @@ namespace SuiBot_TwitchSocket
 
 		private void Socket_Reconnected(WebsocketClient sender, ReconnectionInfo info)
 		{
-			switch(info.Type)
+			switch (info.Type)
 			{
 				case ReconnectionType.Initial:
 					Socket_OnOpen(sender);
@@ -362,6 +360,15 @@ namespace SuiBot_TwitchSocket
 				case "channel.raid":
 					ProcessChannelRaid(message.payload);
 					return;
+				case "channel.shared_chat.begin":
+					ProcessSharedChatBegin(message.payload);
+					return;
+				case "channel.shared_chat.update":
+					ProcessSharedChatUpdate(message.payload);
+					return;
+				case "channel.shared_chat.end":
+					ProcessSharedChatEnd(message.payload);
+					return;
 				default:
 					Console.WriteLine($"Unhandled message type: {message.metadata.subscription_type}");
 					return;
@@ -521,6 +528,42 @@ namespace SuiBot_TwitchSocket
 				BotInstance?.TwitchSocket_Connected();
 				Reconnect_Failures = 0;
 			}
+		}
+
+		private void ProcessSharedChatBegin(JToken payload)
+		{
+			if (payload["event"] == null)
+				return;
+
+			var obj = payload["event"].ToObject<ES_SharedChatEnd>();
+			if (obj == null)
+				return;
+
+			BotInstance?.TwitchSocket_SharedChatBegin(obj);
+		}
+
+		private void ProcessSharedChatUpdate(JToken payload)
+		{
+			if (payload["event"] == null)
+				return;
+
+			var obj = payload["event"].ToObject<ES_SharedChatUpdate>();
+			if (obj == null)
+				return;
+
+			BotInstance?.TwitchSocket_SharedChatUpdate(obj);
+		}
+
+		private void ProcessSharedChatEnd(JToken payload)
+		{
+			if (payload["event"] == null)
+				return;
+
+			var obj = payload["event"].ToObject<ES_SharedChatBegin>();
+			if (obj == null)
+				return;
+
+			BotInstance?.TwitchSocket_SharedChatEnd(obj);
 		}
 
 		internal void Close()

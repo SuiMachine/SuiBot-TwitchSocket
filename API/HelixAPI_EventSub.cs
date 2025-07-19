@@ -202,6 +202,83 @@ namespace SuiBot_TwitchSocket.API
 			return false;
 		}
 
+		
+		public async Task<bool> SubscribeToSharedChatBegin(string channelID, string sessionID)
+		{
+			var request = new SubscribeMSG_SharedChatBegin(channelID, User_Id, sessionID);
+			var serialize = JsonConvert.SerializeObject(request, Formatting.Indented, new JsonSerializerSettings()
+			{
+				NullValueHandling = NullValueHandling.Ignore
+			});
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "eventsub/subscriptions", "", serialize, BuildDefaultHeaders());
+			if (result != null)
+			{
+				Response_SubscribeTo deserialize = JsonConvert.DeserializeObject<Response_SubscribeTo>(result);
+				if (deserialize != null)
+				{
+					deserialize.PerformCostCheck();
+					var channel = deserialize.data.FirstOrDefault(x => x.condition.broadcaster_user_id?.ToString() == channelID);
+					return channel != null;
+				}
+				else
+					return false;
+			}
+
+			return false;
+		}
+
+		public async Task<bool> SubscribeToSharedChatUpdate(string channelID, string sessionID)
+		{
+			var request = new SubscribeMSG_SharedChatUpdate(channelID, User_Id, sessionID);
+			var serialize = JsonConvert.SerializeObject(request, Formatting.Indented, new JsonSerializerSettings()
+			{
+				NullValueHandling = NullValueHandling.Ignore
+			});
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "eventsub/subscriptions", "", serialize, BuildDefaultHeaders());
+			if (result != null)
+			{
+				Response_SubscribeTo deserialize = JsonConvert.DeserializeObject<Response_SubscribeTo>(result);
+				if (deserialize != null)
+				{
+					deserialize.PerformCostCheck();
+					var channel = deserialize.data.FirstOrDefault(x => x.condition.broadcaster_user_id?.ToString() == channelID);
+					return channel != null;
+				}
+				else
+					return false;
+			}
+
+			return false;
+		}
+
+		public async Task<bool> SubscribeToSharedChatEnd(string channelID, string sessionID)
+		{
+			var request = new SubscribeMSG_SharedChatEnd(channelID, User_Id, sessionID);
+			var serialize = JsonConvert.SerializeObject(request, Formatting.Indented, new JsonSerializerSettings()
+			{
+				NullValueHandling = NullValueHandling.Ignore
+			});
+
+			var result = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "eventsub/subscriptions", "", serialize, BuildDefaultHeaders());
+			if (result != null)
+			{
+				Response_SubscribeTo deserialize = JsonConvert.DeserializeObject<Response_SubscribeTo>(result);
+				if (deserialize != null)
+				{
+					deserialize.PerformCostCheck();
+					var channel = deserialize.data.FirstOrDefault(x => x.condition.broadcaster_user_id?.ToString() == channelID);
+					return channel != null;
+				}
+				else
+					return false;
+			}
+
+			return false;
+		}
+
+
 		/// <summary>
 		/// This can only be subscribed to with channel owner account!
 		/// </summary>
