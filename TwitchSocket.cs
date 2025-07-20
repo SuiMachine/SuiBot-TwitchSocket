@@ -535,7 +535,7 @@ namespace SuiBot_TwitchSocket
 			if (payload["event"] == null)
 				return;
 
-			var obj = payload["event"].ToObject<ES_SharedChatEnd>();
+			var obj = payload["event"].ToObject<ES_SharedChatBegin>();
 			if (obj == null)
 				return;
 
@@ -559,7 +559,7 @@ namespace SuiBot_TwitchSocket
 			if (payload["event"] == null)
 				return;
 
-			var obj = payload["event"].ToObject<ES_SharedChatBegin>();
+			var obj = payload["event"].ToObject<ES_SharedChatEnd>();
 			if (obj == null)
 				return;
 

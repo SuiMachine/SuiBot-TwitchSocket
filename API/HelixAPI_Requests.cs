@@ -863,7 +863,7 @@ namespace SuiBot_TwitchSocket.API
 					NullValueHandling = NullValueHandling.Ignore
 				});
 				var post = await HttpWebRequestHandlers.PerformPostAsync(BASE_URI, "channel_points/custom_rewards", $"?broadcaster_id={User_Id}", serialize, BuildDefaultHeaders());
-				if (post == null)
+				if (string.IsNullOrEmpty(post))
 					return null;
 
 				var deserialize = (JToken)JsonConvert.DeserializeObject(post);
