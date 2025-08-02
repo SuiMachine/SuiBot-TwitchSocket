@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -38,29 +39,19 @@ namespace SuiBot_TwitchSocket
 
 		public static string PerformGetSync(string baseUrl, string scope, string parameters, Dictionary<string, string> requestHeaders)
 		{
+			using HttpClient client = new();
+			using HttpRequestMessage content = new(HttpMethod.Get, new Uri(baseUrl + scope + parameters));
+
+
 			try
 			{
-				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + scope + parameters);
-
-				//Headers
-				if (requestHeaders != null)
+				var result = client.Send(content);
+				if (result.IsSuccessStatusCode)
 				{
-					foreach (var header in requestHeaders)
-					{
-						request.Headers[header.Key] = header.Value;
-					}
+					return result.Content.ReadAsStream().ToString();
 				}
 
-				request.ContentType = "application/json";
-				request.Method = "GET";
-
-				var webResponse = request.GetResponse();
-				using (HttpWebResponse response = (HttpWebResponse)webResponse)
-				using (Stream stream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(stream))
-				{
-					return reader.ReadToEnd();
-				}
+				return "";
 			}
 			catch (Exception e)
 			{
@@ -72,36 +63,18 @@ namespace SuiBot_TwitchSocket
 
 		public static async Task<string> PerformGetAsync(string baseUrl, string scope, string parameters, Dictionary<string, string> requestHeaders, int timeout = 5000)
 		{
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + scope + parameters);
+			using HttpClient client = new()
+			{
+				Timeout = TimeSpan.FromSeconds(timeout)
+			};
+			using HttpRequestMessage content = new(HttpMethod.Get, new Uri(baseUrl + scope + parameters));
 
 			try
 			{
-				foreach (var requestHeader in requestHeaders)
-					request.Headers[requestHeader.Key] = requestHeader.Value;
-
-				request.Timeout = timeout;
-				request.Method = "GET";
-
-				var webResponse = await request.GetResponseAsync();
-				using (HttpWebResponse response = (HttpWebResponse)webResponse)
-				using (Stream stream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(stream))
+				var result = await client.SendAsync(content);
+				if (result.IsSuccessStatusCode)
 				{
-					return await reader.ReadToEndAsync();
-				}
-			}
-			catch (WebException ex)
-			{
-				using (WebResponse response = ex.Response)
-				{
-					ErrorLoggingSocket.WriteLine($"Failed to perform get: {ex}");
-					if (ex?.Response?.ContentLength > 0)
-					{
-						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
-						ErrorLoggingSocket.WriteLine($"Error content was:");
-						ErrorLoggingSocket.WriteLine(error);
-					}
-					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
+					return await result.Content.ReadAsStringAsync();
 				}
 
 				return "";
@@ -116,38 +89,27 @@ namespace SuiBot_TwitchSocket
 
 		public static async Task<string> PerformDeleteAsync(string baseUrl, string scope, string parameters, Dictionary<string, string> headers, string contentType = "application/json", int timeout = 8000)
 		{
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + scope + parameters);
+			using HttpClient client = new()
+			{
+				Timeout = TimeSpan.FromSeconds(timeout)
+			};
+			using HttpRequestMessage content = new(HttpMethod.Delete, new Uri(baseUrl + scope + parameters));
+
+			foreach (var header in headers)
+			{
+				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
+					continue;
+
+				content.Headers.Add(header.Key, header.Value);
+			}
+
 
 			try
 			{
-				foreach (var header in headers)
+				var result = await client.SendAsync(content);
+				if (result.IsSuccessStatusCode)
 				{
-					request.Headers[header.Key] = header.Value;
-				}
-				request.Method = "DELETE";
-				request.Timeout = timeout;
-				request.ContentType = contentType;
-
-				using (var response = await request.GetResponseAsync())
-				using (var stream = response.GetResponseStream())
-				using (var reader = new StreamReader(stream))
-				{
-					var result = reader.ReadToEnd();
-					return result;
-				}
-			}
-			catch (WebException ex)
-			{
-				using (WebResponse response = ex.Response)
-				{
-					ErrorLoggingSocket.WriteLine($"Failed to perform delete: {ex}");
-					if (ex?.Response?.ContentLength > 0)
-					{
-						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
-						ErrorLoggingSocket.WriteLine($"Error content was:");
-						ErrorLoggingSocket.WriteLine(error);
-					}
-					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
+					return await result.Content.ReadAsStringAsync();
 				}
 
 				return "";
@@ -162,49 +124,25 @@ namespace SuiBot_TwitchSocket
 
 		public static async Task<string> PerformPostAsync(string baseUrl, string scope, string parameters, string postData, Dictionary<string, string> headers, string contentType = "application/json", int timeout = 8000)
 		{
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + scope + parameters);
+			using HttpClient client = new()
+			{
+				Timeout = TimeSpan.FromSeconds(timeout)
+			};
+			using StringContent content = new(postData, Encoding.UTF8, contentType);
+			foreach (var header in headers)
+			{
+				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
+					continue;
+
+				content.Headers.Add(header.Key, header.Value);
+			}
 
 			try
 			{
-				foreach (var header in headers)
+				var result = await client.PostAsync(new Uri(baseUrl + scope + parameters), content);	
+				if(result.IsSuccessStatusCode)
 				{
-					request.Headers[header.Key] = header.Value;
-				}
-
-				byte[] encodedPostData = Encoding.UTF8.GetBytes(postData);
-
-				request.Timeout = timeout;
-				request.Method = "POST";
-				request.ContentType = contentType;
-				request.ContentLength = encodedPostData.Length;
-
-				var requestStream = request.GetRequestStreamAsync();
-				using (var rqStream = await requestStream)
-				{
-					await rqStream.WriteAsync(encodedPostData, 0, encodedPostData.Length);
-				}
-
-				var webResponse = await request.GetResponseAsync();
-				using (HttpWebResponse response = (HttpWebResponse)webResponse)
-				using (Stream stream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(stream))
-				{
-					return await reader.ReadToEndAsync();
-				}
-			}
-			catch (WebException ex)
-			{
-				using (WebResponse response = ex.Response)
-				{
-					ErrorLoggingSocket.WriteLine($"Failed to perform post: {ex}");
-					if (ex?.Response?.ContentLength > 0)
-					{
-						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
-						ErrorLoggingSocket.WriteLine($"Error content was:");
-						ErrorLoggingSocket.WriteLine(error);
-					}
-					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
-					ErrorLoggingSocket.WriteLine($"Content was: {postData}");
+					return await result.Content.ReadAsStringAsync();
 				}
 
 				return "";
@@ -220,50 +158,28 @@ namespace SuiBot_TwitchSocket
 
 		public static async Task<string> PerformPatchAsync(string baseUrl, string scope, string parameters, string patchData, Dictionary<string, string> headers, string contentType = "application/json", int timeout = 5000)
 		{
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl + scope + parameters);
+			using HttpClient client = new()
+			{
+				Timeout = TimeSpan.FromSeconds(timeout)
+			};
+			using StringContent content = new(patchData, Encoding.UTF8, contentType);
+			foreach (var header in headers)
+			{
+				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
+					continue;
+
+				content.Headers.Add(header.Key, header.Value);
+			}
+
 
 			try
 			{
-				foreach (var header in headers)
+				var result = await client.PatchAsync(new Uri(baseUrl + scope + parameters), content);
+				if (result.IsSuccessStatusCode)
 				{
-					request.Headers[header.Key] = header.Value;
+					return await result.Content.ReadAsStringAsync();
 				}
 
-				byte[] encodedPostData = Encoding.UTF8.GetBytes(patchData);
-
-				request.Timeout = timeout;
-				request.Method = "PATCH";
-				request.ContentType = contentType;
-				request.ContentLength = encodedPostData.Length;
-
-				var requestStream = request.GetRequestStreamAsync();
-				using (var rqStream = await requestStream)
-				{
-					await rqStream.WriteAsync(encodedPostData, 0, encodedPostData.Length);
-				}
-
-				var webResponse = await request.GetResponseAsync();
-				using (HttpWebResponse response = (HttpWebResponse)webResponse)
-				using (Stream stream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(stream))
-				{
-					return await reader.ReadToEndAsync();
-				}
-			}
-			catch (WebException ex)
-			{
-				using (WebResponse response = ex.Response)
-				{
-					ErrorLoggingSocket.WriteLine($"Failed to perform patch: {ex}");
-					if (ex?.Response.ContentLength > 0)
-					{
-						string error = new StreamReader(response.GetResponseStream()).ReadToEnd();
-						ErrorLoggingSocket.WriteLine($"Error content was:");
-						ErrorLoggingSocket.WriteLine(error);
-					}
-					ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
-					ErrorLoggingSocket.WriteLine($"Content was: {patchData}");
-				}
 				return "";
 			}
 			catch (Exception e)
