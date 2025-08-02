@@ -41,14 +41,31 @@ namespace SuiBot_TwitchSocket
 		{
 			using HttpClient client = new();
 			using HttpRequestMessage content = new(HttpMethod.Get, new Uri(baseUrl + scope + parameters));
+			foreach (var header in requestHeaders)
+			{
+				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
+					continue;
 
+				if (header.Key == "Authorization")
+				{
+					var split = header.Value.Split([' '], 2, StringSplitOptions.TrimEntries);
+					if (split.Length == 2)
+					{
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(split[0], split[1]);
+					}
+					else
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(header.Value);
+				}
+				else
+					content.Headers.Add(header.Key, [header.Value]);
+			}
 
 			try
 			{
 				var result = client.Send(content);
 				if (result.IsSuccessStatusCode)
 				{
-					return result.Content.ReadAsStream().ToString();
+					return result.Content.ReadAsStringAsync().Result;
 				}
 
 				return "";
@@ -56,7 +73,7 @@ namespace SuiBot_TwitchSocket
 			catch (Exception e)
 			{
 				ErrorLoggingSocket.WriteLine($"Failed to perform get: {e}");
-				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl+scope}");
+				ErrorLoggingSocket.WriteLine($"Url and scope were: to perform get: {baseUrl + scope}");
 				return "";
 			}
 		}
@@ -68,6 +85,24 @@ namespace SuiBot_TwitchSocket
 				Timeout = TimeSpan.FromSeconds(timeout)
 			};
 			using HttpRequestMessage content = new(HttpMethod.Get, new Uri(baseUrl + scope + parameters));
+			foreach (var header in requestHeaders)
+			{
+				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
+					continue;
+
+				if (header.Key == "Authorization")
+				{
+					var split = header.Value.Split([' '], 2, StringSplitOptions.TrimEntries);
+					if (split.Length == 2)
+					{
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(split[0], split[1]);
+					}
+					else
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(header.Value);
+				}
+				else
+					content.Headers.Add(header.Key, [header.Value]);
+			}
 
 			try
 			{
@@ -95,12 +130,24 @@ namespace SuiBot_TwitchSocket
 			};
 			using HttpRequestMessage content = new(HttpMethod.Delete, new Uri(baseUrl + scope + parameters));
 
+
 			foreach (var header in headers)
 			{
 				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
 					continue;
 
-				content.Headers.Add(header.Key, header.Value);
+				if (header.Key == "Authorization")
+				{
+					var split = header.Value.Split([' '], 2, StringSplitOptions.TrimEntries);
+					if (split.Length == 2)
+					{
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(split[0], split[1]);
+					}
+					else
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(header.Value);
+				}
+				else
+					content.Headers.Add(header.Key, [header.Value]);
 			}
 
 
@@ -128,19 +175,32 @@ namespace SuiBot_TwitchSocket
 			{
 				Timeout = TimeSpan.FromSeconds(timeout)
 			};
+
+
 			using StringContent content = new(postData, Encoding.UTF8, contentType);
 			foreach (var header in headers)
 			{
 				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
 					continue;
 
-				content.Headers.Add(header.Key, header.Value);
+				if (header.Key == "Authorization")
+				{
+					var split = header.Value.Split([' '], 2, StringSplitOptions.TrimEntries);
+					if (split.Length == 2)
+					{
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(split[0], split[1]);
+					}
+					else
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(header.Value);
+				}
+				else
+					content.Headers.Add(header.Key, [header.Value]);
 			}
 
 			try
 			{
-				var result = await client.PostAsync(new Uri(baseUrl + scope + parameters), content);	
-				if(result.IsSuccessStatusCode)
+				var result = await client.PostAsync(new Uri(baseUrl + scope + parameters), content);
+				if (result.IsSuccessStatusCode)
 				{
 					return await result.Content.ReadAsStringAsync();
 				}
@@ -168,7 +228,18 @@ namespace SuiBot_TwitchSocket
 				if (string.IsNullOrEmpty(header.Key) || string.IsNullOrEmpty(header.Value))
 					continue;
 
-				content.Headers.Add(header.Key, header.Value);
+				if (header.Key == "Authorization")
+				{
+					var split = header.Value.Split([' '], 2, StringSplitOptions.TrimEntries);
+					if (split.Length == 2)
+					{
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(split[0], split[1]);
+					}
+					else
+						client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(header.Value);
+				}
+				else
+					content.Headers.Add(header.Key, [header.Value]);
 			}
 
 

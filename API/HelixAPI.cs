@@ -40,8 +40,8 @@ namespace SuiBot_TwitchSocket.API
 		{
 			return new Dictionary<string, string>()
 			{
+				{ "Authorization", "Bearer " + OAUTH },
 				{ "Client-ID", CLIENT_ID },
-				{ "Authorization", "Bearer " + OAUTH }
 			};
 		}
 
