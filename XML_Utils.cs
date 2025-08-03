@@ -1,5 +1,4 @@
-﻿using SuiBot_Core;
-using SuiBot_TwitchSocket;
+﻿using SuiBot_TwitchSocket;
 using System;
 using System.IO;
 using System.Xml.Serialization;
