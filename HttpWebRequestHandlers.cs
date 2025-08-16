@@ -251,14 +251,14 @@ namespace SuiBot_TwitchSocket
 					return await result.Content.ReadAsStringAsync();
 				}
 
-				return "";
+				return null;
 			}
 			catch (Exception e)
 			{
 				ErrorLoggingSocket.WriteLine($"Failed to perform patch: {e}");
 				ErrorLoggingSocket.WriteLine($"Url and scope were: {baseUrl + scope + parameters}");
 				ErrorLoggingSocket.WriteLine($"Content was: {patchData}");
-				return "";
+				return null;
 			}
 		}
 	}

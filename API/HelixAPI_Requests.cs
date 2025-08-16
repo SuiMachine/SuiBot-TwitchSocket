@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using static SuiBot_TwitchSocket.API.EventSub.Subscription.Responses.Response_SubscribeTo;
 using static SuiBot_TwitchSocket.API.Helix.Responses.Response_AdSnooze;
@@ -151,11 +150,18 @@ namespace SuiBot_TwitchSocket.API
 		/// </summary>
 		/// <param name="modifyData">Object containing what to modify - all fields are optional (use nulls)</param>
 		/// <returns>Task</returns>
-		public async Task ModifyChannelInformation(Request_ModifyChannelInformation modifyData)
+		public async Task<bool> ModifyChannelInformation(Request_ModifyChannelInformation modifyData)
 		{
+			if(!Scopes.Contains("channel:manage:broadcast"))
+			{
+				ErrorLoggingSocket.WriteLine("No required scope channel:manage:broadcast found.");
+				return false;
+			}
+
 			var serialize = DefaultSerialize(modifyData);
 
 			var post = await HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "channels", $"?broadcaster_id={User_Id}", serialize, BuildDefaultHeaders());
+			return post != null;
 		}
 
 		/// <summary>
@@ -317,7 +323,7 @@ namespace SuiBot_TwitchSocket.API
 		public async Task<Response_SharedSession> GetChatSharedSession(string channelID)
 		{
 			var result = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "shared_chat/session", $"?broadcaster_id={channelID}", BuildDefaultHeaders());
-			if(result != "")
+			if (result != "")
 			{
 				var deserialize = JsonConvert.DeserializeObject<JToken>(result);
 				if (deserialize["data"] != null)
@@ -764,7 +770,7 @@ namespace SuiBot_TwitchSocket.API
 					NullValueHandling = NullValueHandling.Ignore
 				});
 
-				var pathRequest = await HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "channel_points/custom_rewards/redemptions", $"?id={redeem.id}&broadcaster_id={redeem.broadcaster_user_id}&reward_id={redeem.reward.id}", serialize, BuildDefaultHeaders()); ;
+				var pathRequest = await HttpWebRequestHandlers.PerformPatchAsync(BASE_URI, "channel_points/custom_rewards/redemptions", $"?id={redeem.id}&broadcaster_id={redeem.broadcaster_user_id}&reward_id={redeem.reward.id}", serialize, BuildDefaultHeaders());
 			});
 		}
 
@@ -941,6 +947,24 @@ namespace SuiBot_TwitchSocket.API
 			}
 		}
 
+		public async Task<Response_GetChatters> GetChatters(string broadcasterId)
+		{
+			if (!Scopes.Contains("moderator:read:chatters"))
+			{
+				ErrorLoggingSocket.WriteLine("Can't perform - client doesn't have moderator:read:chatters");
+				return null;
+			}
 
+
+			var get = await HttpWebRequestHandlers.PerformGetAsync(BASE_URI, "chat/chatters", $"?broadcaster_id={broadcasterId}&moderator_id={User_Id}", BuildDefaultHeaders());
+			if (string.IsNullOrEmpty(get))
+			{
+				ErrorLoggingSocket.WriteLine($"Failed to get a response for chat/chatters");
+				return null;
+			}
+
+			var res = JsonConvert.DeserializeObject<Response_GetChatters>(get);
+			return res;
+		}
 	}
 }
