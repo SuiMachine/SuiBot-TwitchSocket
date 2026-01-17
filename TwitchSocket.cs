@@ -19,7 +19,6 @@ namespace SuiBot_TwitchSocket
 		private const string WEBSOCKET_BASE_URI = "wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=30";
 #endif
 
-		private string WEBSOCKET_CONNECT_URI;
 		private int Reconnect_Failures = 0;
 
 		private IBotInstance BotInstance;
@@ -39,7 +38,9 @@ namespace SuiBot_TwitchSocket
 		public bool Connecting => m_Connecting;
 		public volatile bool AutoReconnect;
 		public DateTime LastMessageAt { get; private set; }
-		public Websocket.Client.WebsocketClient Socket { get; private set; }
+		public WebsocketClient Socket { get; private set; }
+		public WebsocketClient Secondary_Socket { get; private set; }
+
 		private System.Timers.Timer DelayConnectionTimer;
 		private System.Timers.Timer KeepAliveCheck;
 		private System.Timers.Timer m_Temp_AdBreakEnd;
@@ -51,11 +52,8 @@ namespace SuiBot_TwitchSocket
 			m_Connected = false;
 			m_Connecting = true;
 
-			if (string.IsNullOrEmpty(WEBSOCKET_CONNECT_URI))
-				WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
-
-			Socket = new WebsocketClient(new Uri(WEBSOCKET_CONNECT_URI));
-			Socket.IsReconnectionEnabled = false;
+			Socket = new WebsocketClient(new Uri(WEBSOCKET_BASE_URI));
+			Socket.IsReconnectionEnabled = false; //Twitch doesn't allow for normal reconnects!
 
 #if !LOCAL_API
 			//Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
@@ -100,15 +98,22 @@ namespace SuiBot_TwitchSocket
 		private void ReconnectWithUrl(string reconnect_url)
 		{
 			//rewrite this - it needs 2 sockets running and checking receiver
-			var newSocket = new WebsocketClient(new Uri(reconnect_url));
-			newSocket.IsReconnectionEnabled = false;
-			//newSocket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+			if (Secondary_Socket != null)
+			{
+				Secondary_Socket.Dispose();
+			}
+
+
+			var newSocket = new WebsocketClient(new Uri(reconnect_url))
+			{
+				IsReconnectionEnabled = false
+			};
 
 			this.AutoReconnect = true;
-			this.WEBSOCKET_CONNECT_URI = reconnect_url;
 			newSocket.DisconnectionHappened.Subscribe(disconnectMsg => Socket_OnClose(newSocket, disconnectMsg));
 			newSocket.MessageReceived.Subscribe(msg => Socket_OnMessage(newSocket, msg));
 			newSocket.ReconnectionHappened.Subscribe(msg => Socket_Reconnected(newSocket, msg));
+			Secondary_Socket = newSocket;
 
 			Task.Run(async () =>
 			{
@@ -136,16 +141,20 @@ namespace SuiBot_TwitchSocket
 			{
 				m_Connected = true;
 				m_Connecting = false;
-				Debug.WriteLine("Opened Twitch socket");
+				ErrorLoggingSocket.WriteLine("Opened Twitch socket");
 				KeepAliveCheck = new System.Timers.Timer(5 * 1000);
 				KeepAliveCheck.Elapsed += KeepAliveCheck_Elapsed;
 				KeepAliveCheck.Start();
 			}
-			else
+			else if(sender == Secondary_Socket)
 			{
 				m_Connected = true;
 				m_Connecting = false;
-				Debug.WriteLine("Secondary socket opened");
+				ErrorLoggingSocket.WriteLine("Secondary socket opened");
+			}
+			else
+			{
+
 			}
 		}
 
@@ -158,13 +167,18 @@ namespace SuiBot_TwitchSocket
 
 		private void Socket_OnClose(WebsocketClient socketToClose, DisconnectionInfo e)
 		{
-			if (socketToClose != Socket)
+			if(socketToClose == Secondary_Socket)
 			{
 				ErrorLoggingSocket.WriteLine($"Secondary socket closed with code {e.Type} - {e.Exception?.Message ?? "None"}");
 				return;
 			}
+			else if (socketToClose != Socket)
+			{
+				ErrorLoggingSocket.WriteLine($"Some unknown socket closed with {e.Type} - {e.Exception?.Message ?? "None"}");
+				return;
+			}
 
-			EventSubClose_Code closeType = e.CloseStatus == null ? EventSubClose_Code.client_failed_pingpong : (EventSubClose_Code)e.CloseStatus;
+			EventSubClose_Code closeType = e.CloseStatus == null ? EventSubClose_Code.INVALID : (EventSubClose_Code)e.CloseStatus;
 			m_Connected = false;
 			m_Connecting = false;
 			KeepAliveCheck?.Stop();
@@ -198,7 +212,6 @@ namespace SuiBot_TwitchSocket
 					case (ushort)WebSocketCloseStatus.InternalServerError:
 						//case (ushort)CloseStatusCode.TlsHandshakeFailure:
 						delay = 60_000;
-						WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
 						break;
 					case (ushort)WebSocketCloseStatus.InvalidPayloadData:
 					case (ushort)WebSocketCloseStatus.PolicyViolation:
@@ -208,7 +221,6 @@ namespace SuiBot_TwitchSocket
 						return;
 					case 4002:
 						ErrorLoggingSocket.WriteLine("Failed ping-pong!");
-						WEBSOCKET_CONNECT_URI = WEBSOCKET_BASE_URI;
 						delay = 60_000;
 						AutoReconnect = true;
 						break;
@@ -487,7 +499,7 @@ namespace SuiBot_TwitchSocket
 			if (eventText == null)
 				return;
 
-			var dbgTxt = payload.ToString();
+			//var dbgTxt = payload.ToString();
 			var msg = eventText.ToObject<ES_AutomodMessageHold>();
 			if (msg == null)
 				return;
@@ -501,7 +513,7 @@ namespace SuiBot_TwitchSocket
 			if (eventText == null)
 				return;
 
-			var dbgTxt = payload.ToString();
+			//var dbgTxt = payload.ToString();
 			var msg = eventText.ToObject<ES_Suspicious_UserMessage>();
 			if (msg == null)
 				return;
@@ -509,24 +521,29 @@ namespace SuiBot_TwitchSocket
 			BotInstance?.TwitchSocket_SuspiciousMessageReceived(msg);
 		}
 
-		private void ProcessWelcome(JToken payload, Websocket.Client.WebsocketClient socket)
+		private void ProcessWelcome(JToken payload, WebsocketClient socket)
 		{
 			var content = payload["session"].ToObject<ES_SessionMessage>();
-			if (socket != Socket)
+			if (socket == Socket)
+			{
+				ErrorLoggingSocket.WriteLine("Processing welcome msg on primary soecket...");
+				SessionID = content.id;
+				AutoReconnect = true;
+				BotInstance?.TwitchSocket_Connected();
+				Reconnect_Failures = 0;
+			}
+			else if (socket == Secondary_Socket)
 			{
 				SessionID = content.id;
 				ErrorLoggingSocket.WriteLine("Closing primary socket and swapping secondary to be primary!");
 				Socket.Stop(WebSocketCloseStatus.NormalClosure, "Closing primary socket and swapping secondary to be primary!");
 				Socket = socket;
 				AutoReconnect = true;
-				WEBSOCKET_CONNECT_URI = null;
 			}
 			else
 			{
-				SessionID = content.id;
-				AutoReconnect = true;
-				BotInstance?.TwitchSocket_Connected();
-				Reconnect_Failures = 0;
+				ErrorLoggingSocket.WriteLine("Socket that processed a welcome wasn't either a primary or secondary - so something is wrong in code!");
+				socket.Dispose();
 			}
 		}
 

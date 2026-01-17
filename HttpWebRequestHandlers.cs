@@ -204,8 +204,21 @@ namespace SuiBot_TwitchSocket
 				{
 					return await result.Content.ReadAsStringAsync();
 				}
+				else
+				{
+					string readErrorContent = await result.Content.ReadAsStringAsync();
 
-				return "";
+					switch (result.StatusCode)
+					{
+
+						case HttpStatusCode.InternalServerError:
+							break;
+						case HttpStatusCode.BadRequest:
+							break;
+					}
+				}
+
+					return "";
 			}
 			catch (Exception e)
 			{

@@ -53,7 +53,7 @@ namespace SuiBot_TwitchSocket.API
 		public ValidationResult ValidateToken()
 		{
 #if LOCAL_API
-			var res = HttpWebRequestHandlers.GetSync("http://localhost:8080/mock", "validate", "", BuildDefaultHeaders());
+			var res = HttpWebRequestHandlers.PerformGetSync("http://localhost:8080/mock/", "validate", "", BuildDefaultHeaders());
 #else
 			var res = HttpWebRequestHandlers.PerformGetSync("https://id.twitch.tv/oauth2/", "validate", "", BuildDefaultHeaders());
 #endif
@@ -113,15 +113,12 @@ namespace SuiBot_TwitchSocket.API
 			return url.AbsoluteUri;
 		}
 		#endregion
-		//For testing
+
 		public HelixAPI(string clientID, IBotInstance bot, string aouth)
 		{
 			this.m_BotInstance = bot;
 			this.OAUTH = aouth;
 			this.CLIENT_ID = clientID;
-#if LOCAL_API
-			this.BotLoginName = "fishershepard595";
-#endif
 		}
 
 		private string DefaultSerialize(object obj)

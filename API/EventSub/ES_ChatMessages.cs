@@ -96,6 +96,10 @@ namespace SuiBot_TwitchSocket.API.EventSub
 		public string channel_points_custom_reward_id;
 		public string channel_points_animation_id;
 		[NonSerialized][JsonIgnore] public Role UserRole = Role.User;
+		public string source_broadcaster_user_id;
+		public string source_broadcaster_user_login;
+		public string source_broadcaster_user_name;
+		public Badge[] source_badges = new Badge[0];
 
 		internal void SetupRole(IChannelInstance channel)
 		{

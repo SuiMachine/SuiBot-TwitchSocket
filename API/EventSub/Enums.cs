@@ -2,6 +2,7 @@
 {
 	public enum EventSubClose_Code
 	{
+		INVALID = -1,
 		internal_server_error = 4000,
 		client_sent_inbound_traffic = 4001,
 		client_failed_pingpong = 4002,
