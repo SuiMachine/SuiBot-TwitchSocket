@@ -38,7 +38,7 @@ namespace SuiBot_TwitchSocket
 		public bool Connecting => m_Connecting;
 		public volatile bool AutoReconnect;
 		public DateTime LastMessageAt { get; private set; }
-		public WebsocketClient Socket { get; private set; }
+		public WebsocketClient Main_Socket { get; private set; }
 		public WebsocketClient Secondary_Socket { get; private set; }
 
 		private System.Timers.Timer DelayConnectionTimer;
@@ -52,16 +52,16 @@ namespace SuiBot_TwitchSocket
 			m_Connected = false;
 			m_Connecting = true;
 
-			Socket = new WebsocketClient(new Uri(WEBSOCKET_BASE_URI));
-			Socket.IsReconnectionEnabled = false; //Twitch doesn't allow for normal reconnects!
+			Main_Socket = new WebsocketClient(new Uri(WEBSOCKET_BASE_URI));
+			Main_Socket.IsReconnectionEnabled = false; //Twitch doesn't allow for normal reconnects!
 
 #if !LOCAL_API
 			//Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
 #endif
 
-			Socket.ReconnectionHappened.Subscribe(info => Socket_Reconnected(Socket, info));
-			Socket.MessageReceived.Subscribe(msg => Socket_OnMessage(Socket, msg));
-			Socket.DisconnectionHappened.Subscribe(disconnectMsg => Socket_OnClose(Socket, disconnectMsg));
+			Main_Socket.ReconnectionHappened.Subscribe(info => Socket_Reconnected(Main_Socket, info));
+			Main_Socket.MessageReceived.Subscribe(msg => Socket_OnMessage(Main_Socket, msg));
+			Main_Socket.DisconnectionHappened.Subscribe(disconnectMsg => Socket_OnClose(Main_Socket, disconnectMsg));
 
 			DelayConnectionTimer?.Dispose();
 
@@ -85,7 +85,7 @@ namespace SuiBot_TwitchSocket
 			{
 				Task.Run(async () =>
 				{
-					await Socket.Start();
+					await Main_Socket.Start();
 				});
 				if (DelayConnectionTimer == sender)
 				{
@@ -137,7 +137,7 @@ namespace SuiBot_TwitchSocket
 
 		private void Socket_OnOpen(WebsocketClient sender)
 		{
-			if (sender == Socket)
+			if (sender == Main_Socket)
 			{
 				m_Connected = true;
 				m_Connecting = false;
@@ -162,7 +162,7 @@ namespace SuiBot_TwitchSocket
 		{
 			var currentTime = DateTime.UtcNow;
 			if (LastMessageAt + TimeSpan.FromSeconds(45) < currentTime)
-				Socket.Stop(WebSocketCloseStatus.EndpointUnavailable, "KeepAlive failed");
+				Main_Socket.Stop(WebSocketCloseStatus.EndpointUnavailable, "KeepAlive failed");
 		}
 
 		private void Socket_OnClose(WebsocketClient socketToClose, DisconnectionInfo e)
@@ -172,7 +172,7 @@ namespace SuiBot_TwitchSocket
 				ErrorLoggingSocket.WriteLine($"Secondary socket closed with code {e.Type} - {e.Exception?.Message ?? "None"}");
 				return;
 			}
-			else if (socketToClose != Socket)
+			else if (socketToClose != Main_Socket)
 			{
 				ErrorLoggingSocket.WriteLine($"Some unknown socket closed with {e.Type} - {e.Exception?.Message ?? "None"}");
 				return;
@@ -252,7 +252,7 @@ namespace SuiBot_TwitchSocket
 			}
 			else
 			{
-				Socket = null;
+				Main_Socket = null;
 
 				if (BotInstance != null)
 				{
@@ -263,7 +263,7 @@ namespace SuiBot_TwitchSocket
 
 		private void Socket_OnMessage(WebsocketClient sourceSocket, ResponseMessage e)
 		{
-			if (sourceSocket == Socket)
+			if (sourceSocket == Main_Socket)
 			{
 				var message = JsonConvert.DeserializeObject<ES_ServerMessage>(e.Text);
 				if (message == null)
@@ -524,7 +524,7 @@ namespace SuiBot_TwitchSocket
 		private void ProcessWelcome(JToken payload, WebsocketClient socket)
 		{
 			var content = payload["session"].ToObject<ES_SessionMessage>();
-			if (socket == Socket)
+			if (socket == Main_Socket)
 			{
 				ErrorLoggingSocket.WriteLine("Processing welcome msg on primary soecket...");
 				SessionID = content.id;
@@ -536,8 +536,9 @@ namespace SuiBot_TwitchSocket
 			{
 				SessionID = content.id;
 				ErrorLoggingSocket.WriteLine("Closing primary socket and swapping secondary to be primary!");
-				Socket.Stop(WebSocketCloseStatus.NormalClosure, "Closing primary socket and swapping secondary to be primary!");
-				Socket = socket;
+				Main_Socket.Stop(WebSocketCloseStatus.NormalClosure, "Closing primary socket and swapping secondary to be primary!");
+				Main_Socket = socket;
+				Secondary_Socket = null;
 				AutoReconnect = true;
 			}
 			else
@@ -586,7 +587,7 @@ namespace SuiBot_TwitchSocket
 		internal void Close()
 		{
 			AutoReconnect = false;
-			Socket?.Stop(WebSocketCloseStatus.NormalClosure, "Intended Closure");
+			Main_Socket?.Stop(WebSocketCloseStatus.NormalClosure, "Intended Closure");
 			DelayConnectionTimer?.Dispose();
 		}
 	}
